@@ -16,18 +16,7 @@ export function RestaurantHeader({ restaurant }: RestaurantHeaderProps) {
               <MapPin className="h-4 w-4" />
               <span className="text-sm">{restaurant.location}</span>
             </div>
-            {restaurant.contact_phone && (
-              <div className="flex items-center gap-1">
-                <Phone className="h-4 w-4" />
-                <span className="text-sm">{restaurant.contact_phone}</span>
-              </div>
-            )}
-            {restaurant.contact_email && (
-              <div className="flex items-center gap-1">
-                <Mail className="h-4 w-4" />
-                <span className="text-sm">{restaurant.contact_email}</span>
-              </div>
-            )}
+            {/* Contact information is only shown to restaurant owners for privacy */}
           </div>
         </div>
       </div>
