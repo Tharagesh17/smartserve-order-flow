@@ -26,12 +26,13 @@ export default function OrderingPage() {
   const fetchRestaurantData = async () => {
     try {
       // Fetch restaurant details
-      const { data: restaurantData, error: restaurantError } = await supabase
-        .from('restaurants')
-        .select('*')
-        .eq('id', restaurantId)
-        .eq('is_active', true)
-        .single();
+    // Fetch restaurant data without sensitive contact information for public users
+    const { data: restaurantData, error: restaurantError } = await supabase
+      .from('restaurants')
+      .select('id, name, location, is_active, qr_code_url, ordering_url, created_at, updated_at')
+      .eq('id', restaurantId)
+      .eq('is_active', true)
+      .single();
 
       if (restaurantError || !restaurantData) {
         toast.error('Restaurant not found or inactive');
