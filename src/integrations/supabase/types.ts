@@ -65,6 +65,13 @@ export type Database = {
             referencedRelation: "restaurants"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "menu_items_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       order_items: {
@@ -160,6 +167,13 @@ export type Database = {
             referencedRelation: "restaurants"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "orders_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       profiles: {
@@ -236,10 +250,46 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      restaurants_public: {
+        Row: {
+          created_at: string | null
+          id: string | null
+          is_active: boolean | null
+          location: string | null
+          name: string | null
+          ordering_url: string | null
+          qr_code_url: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          location?: string | null
+          name?: string | null
+          ordering_url?: string | null
+          qr_code_url?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          location?: string | null
+          name?: string | null
+          ordering_url?: string | null
+          qr_code_url?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       generate_order_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      generate_unique_order_id: {
         Args: Record<PropertyKey, never>
         Returns: string
       }
