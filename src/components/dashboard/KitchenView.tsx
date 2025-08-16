@@ -3,9 +3,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'react-hot-toast';
 import { formatDistanceToNow } from 'date-fns';
-import { Clock, ChefHat } from 'lucide-react';
+import { Clock, ChefHat, List, Package } from 'lucide-react';
+import { BatchView } from './BatchView';
 
 interface KitchenViewProps {
   restaurant: any;
@@ -101,15 +103,12 @@ export function KitchenView({ restaurant }: KitchenViewProps) {
     );
   }
 
-  return (
+  const OrderQueueView = () => (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
-            <ChefHat className="h-8 w-8" />
-            Kitchen Dashboard
-          </h1>
-          <p className="text-muted-foreground">Manage active orders and preparation</p>
+          <h1 className="text-2xl font-bold text-foreground">Order Queue</h1>
+          <p className="text-muted-foreground">Individual order management</p>
         </div>
         <div className="text-right">
           <p className="text-sm text-muted-foreground">Active Orders</p>
@@ -120,7 +119,7 @@ export function KitchenView({ restaurant }: KitchenViewProps) {
       {pendingOrders.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <ChefHat className="h-12 w-12 text-muted-foreground mb-4" />
+            <List className="h-12 w-12 text-muted-foreground mb-4" />
             <p className="text-muted-foreground text-lg">No pending orders</p>
             <p className="text-sm text-muted-foreground">New orders will appear here automatically</p>
           </CardContent>
@@ -213,6 +212,41 @@ export function KitchenView({ restaurant }: KitchenViewProps) {
           ))}
         </div>
       )}
+    </div>
+  );
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
+            <ChefHat className="h-8 w-8" />
+            Kitchen Dashboard
+          </h1>
+          <p className="text-muted-foreground">Manage orders and batch preparation</p>
+        </div>
+      </div>
+
+      <Tabs defaultValue="orders" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="orders" className="flex items-center gap-2">
+            <List className="h-4 w-4" />
+            Order Queue
+          </TabsTrigger>
+          <TabsTrigger value="batch" className="flex items-center gap-2">
+            <Package className="h-4 w-4" />
+            Batch View
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="orders" className="mt-6">
+          <OrderQueueView />
+        </TabsContent>
+        
+        <TabsContent value="batch" className="mt-6">
+          <BatchView restaurant={restaurant} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

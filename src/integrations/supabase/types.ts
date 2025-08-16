@@ -81,6 +81,7 @@ export type Database = {
           menu_item_id: string
           order_id: string
           quantity: number
+          status: string
           unit_price: number
         }
         Insert: {
@@ -89,6 +90,7 @@ export type Database = {
           menu_item_id: string
           order_id: string
           quantity?: number
+          status?: string
           unit_price: number
         }
         Update: {
@@ -97,6 +99,7 @@ export type Database = {
           menu_item_id?: string
           order_id?: string
           quantity?: number
+          status?: string
           unit_price?: number
         }
         Relationships: [

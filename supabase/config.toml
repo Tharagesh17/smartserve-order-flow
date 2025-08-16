@@ -1,1 +1,4 @@
 project_id = "ngqwdmlbawkobqhbrfsm"
+
+[functions.kitchen-batch]
+verify_jwt = false
