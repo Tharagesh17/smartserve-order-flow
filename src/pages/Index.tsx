@@ -13,7 +13,7 @@ const Index = () => {
               <ChefHat className="h-16 w-16" />
             </div>
           </div>
-          <h1 className="text-5xl font-bold mb-4">SmartServe123</h1>
+          <h1 className="text-5xl font-bold mb-4">SmartServe</h1>
           <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
             Complete restaurant ordering and kitchen management platform. QR code menus, real-time orders, and seamless customer experience.
           </p>
