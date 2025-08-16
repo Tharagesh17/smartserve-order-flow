@@ -26,12 +26,11 @@ export default function OrderingPage() {
   const fetchRestaurantData = async () => {
     try {
       // Fetch restaurant details
-    // Fetch restaurant data without sensitive contact information for public users
+    // Use the secure public view that excludes sensitive contact information
     const { data: restaurantData, error: restaurantError } = await supabase
-      .from('restaurants')
-      .select('id, name, location, is_active, qr_code_url, ordering_url, created_at, updated_at')
+      .from('restaurants_public')
+      .select('*')
       .eq('id', restaurantId)
-      .eq('is_active', true)
       .single();
 
       if (restaurantError || !restaurantData) {
