@@ -5,7 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { toast } from 'react-hot-toast';
 import { formatDistanceToNow } from 'date-fns';
-import { DollarSign, Clock, CheckCircle } from 'lucide-react';
+import { IndianRupee, Clock, CheckCircle } from 'lucide-react';
+import { formatCurrency } from '@/lib/currency';
 
 interface OrdersViewProps {
   restaurant: any;
@@ -208,7 +209,7 @@ export function OrdersView({ restaurant }: OrdersViewProps) {
                           {item.quantity}x {item.menu_items.name}
                         </span>
                         <span className="font-medium">
-                          ${(item.quantity * item.unit_price).toFixed(2)}
+                          {formatCurrency(item.quantity * item.unit_price)}
                         </span>
                       </div>
                     ))}
@@ -218,7 +219,7 @@ export function OrdersView({ restaurant }: OrdersViewProps) {
                   <div className="flex justify-between items-center pt-2 border-t">
                     <span className="font-semibold">Total:</span>
                     <span className="text-lg font-bold text-primary">
-                      ${order.total_amount.toFixed(2)}
+                      {formatCurrency(order.total_amount)}
                     </span>
                   </div>
                 </div>

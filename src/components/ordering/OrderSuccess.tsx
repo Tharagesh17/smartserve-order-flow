@@ -1,7 +1,8 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Clock, DollarSign } from 'lucide-react';
+import { CheckCircle, Clock, IndianRupee } from 'lucide-react';
+import { formatCurrency } from '@/lib/currency';
 
 interface OrderSuccessProps {
   order: any;
@@ -41,7 +42,7 @@ export function OrderSuccess({ order, restaurant, onNewOrder }: OrderSuccessProp
                   ? 'bg-success text-success-foreground'
                   : 'bg-orange-100 text-orange-800'
               }>
-                <DollarSign className="h-3 w-3 mr-1" />
+                <IndianRupee className="h-3 w-3 mr-1" />
                 {order.payment_status}
               </Badge>
             </div>
@@ -50,7 +51,7 @@ export function OrderSuccess({ order, restaurant, onNewOrder }: OrderSuccessProp
             <div className="text-center">
               <p className="text-muted-foreground">Total Amount</p>
               <p className="text-2xl font-bold text-primary">
-                ${order.total_amount.toFixed(2)}
+                {formatCurrency(order.total_amount)}
               </p>
             </div>
 

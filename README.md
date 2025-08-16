@@ -1,4 +1,27 @@
-# Welcome to your Lovable project
+# SmartServe - Restaurant Management System
+
+A comprehensive restaurant management platform with QR code ordering, kitchen management, and customer segmentation by hotel type.
+
+## Features
+
+### 🏪 **Hotel Type Segmentation**
+- **Food Cart**: Simple ordering and basic menu management
+- **Restaurant**: Full-service features with staff management
+- **Hotel**: Multi-outlet support with advanced features
+
+### 📱 **Core Features**
+- QR code ordering system
+- Real-time kitchen dashboard
+- Menu management with modifiers
+- Order tracking and management
+- Staff role management
+- Advanced reporting and analytics
+
+### 🚀 **Technology Stack**
+- React + TypeScript
+- Supabase (PostgreSQL + Real-time)
+- Tailwind CSS + shadcn/ui
+- Vite build system
 
 ## Project info
 

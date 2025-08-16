@@ -214,6 +214,7 @@ export type Database = {
           contact_email: string | null
           contact_phone: string | null
           created_at: string
+          hotel_type: "cart" | "restaurant" | "hotel"
           id: string
           is_active: boolean
           location: string
@@ -227,6 +228,7 @@ export type Database = {
           contact_email?: string | null
           contact_phone?: string | null
           created_at?: string
+          hotel_type?: "cart" | "restaurant" | "hotel"
           id?: string
           is_active?: boolean
           location: string
@@ -240,6 +242,7 @@ export type Database = {
           contact_email?: string | null
           contact_phone?: string | null
           created_at?: string
+          hotel_type?: "cart" | "restaurant" | "hotel"
           id?: string
           is_active?: boolean
           location?: string
@@ -298,7 +301,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      hotel_type: "cart" | "restaurant" | "hotel"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -425,6 +428,12 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      hotel_type: {
+        cart: "cart",
+        restaurant: "restaurant",
+        hotel: "hotel"
+      }
+    },
   },
 } as const

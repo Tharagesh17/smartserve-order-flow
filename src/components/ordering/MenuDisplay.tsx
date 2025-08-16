@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Plus, Leaf } from 'lucide-react';
+import { formatCurrency } from '@/lib/currency';
 
 interface MenuDisplayProps {
   menuItems: any[];
@@ -92,7 +93,7 @@ export function MenuDisplay({ menuItems, onAddToCart }: MenuDisplayProps) {
                       
                       <div className="flex items-center gap-2 mb-2">
                         <span className="text-xl font-bold text-primary">
-                          ${item.price.toFixed(2)}
+                          {formatCurrency(item.price)}
                         </span>
                         {item.category && (
                           <Badge variant="outline" className="text-xs">

@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'react-hot-toast';
 import { Minus, Plus, Trash2, X } from 'lucide-react';
+import { formatCurrency } from '@/lib/currency';
 
 interface CartProps {
   isOpen: boolean;
@@ -127,7 +128,7 @@ export function Cart({
                   <div className="flex-1">
                     <h4 className="font-medium">{item.name}</h4>
                     <p className="text-sm text-muted-foreground">
-                      ${item.price.toFixed(2)} each
+                      {formatCurrency(item.price)} each
                     </p>
                   </div>
                   
@@ -169,7 +170,7 @@ export function Cart({
               <div className="border-t pt-4">
                 <div className="flex justify-between items-center text-lg font-bold">
                   <span>Total:</span>
-                  <span className="text-primary">${total.toFixed(2)}</span>
+                  <span className="text-primary">{formatCurrency(total)}</span>
                 </div>
               </div>
 

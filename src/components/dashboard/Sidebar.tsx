@@ -7,8 +7,12 @@ import {
   ClipboardList, 
   Users, 
   QrCode, 
-  LogOut 
+  LogOut,
+  BarChart3,
+  Settings,
+  Building2
 } from 'lucide-react';
+import { getFeatureFlags, getHotelTypeLabel } from '@/lib/featureFlags';
 
 interface SidebarProps {
   restaurant: any;
@@ -18,13 +22,37 @@ interface SidebarProps {
 
 export function Sidebar({ restaurant, activeView, onViewChange }: SidebarProps) {
   const { signOut } = useAuth();
+  const features = getFeatureFlags(restaurant.hotel_type);
 
-  const menuItems = [
+  // Base menu items that all hotel types have
+  const baseMenuItems = [
     { id: 'menu', label: 'Menu', icon: Menu },
     { id: 'orders', label: 'Orders', icon: ClipboardList },
-    { id: 'kitchen', label: 'Kitchen', icon: ChefHat },
     { id: 'qr', label: 'QR Code', icon: QrCode },
   ];
+
+  // Conditional menu items based on hotel type
+  const conditionalMenuItems = [];
+
+  // Kitchen dashboard for restaurant and hotel
+  if (features.canUseKitchenDashboard) {
+    conditionalMenuItems.push({ id: 'kitchen', label: 'Kitchen', icon: ChefHat });
+  }
+
+  // Reports for restaurant and hotel
+  if (features.canUseAdvancedReports) {
+    conditionalMenuItems.push({ id: 'reports', label: 'Reports', icon: BarChart3 });
+  }
+
+  // Staff management for restaurant and hotel
+  if (features.canUseStaffRoles) {
+    conditionalMenuItems.push({ id: 'staff', label: 'Staff', icon: Users });
+  }
+
+  // Settings for all types
+  conditionalMenuItems.push({ id: 'settings', label: 'Settings', icon: Settings });
+
+  const allMenuItems = [...baseMenuItems, ...conditionalMenuItems];
 
   return (
     <div className="w-64 bg-card border-r border-border p-4">
@@ -40,6 +68,12 @@ export function Sidebar({ restaurant, activeView, onViewChange }: SidebarProps) 
         </div>
         
         <Card className="p-3 mt-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Building2 className="h-4 w-4 text-muted-foreground" />
+            <span className="text-xs text-muted-foreground">
+              {getHotelTypeLabel(restaurant.hotel_type)}
+            </span>
+          </div>
           <h3 className="font-medium text-sm text-foreground truncate">
             {restaurant.name}
           </h3>
@@ -50,7 +84,7 @@ export function Sidebar({ restaurant, activeView, onViewChange }: SidebarProps) 
       </div>
 
       <nav className="space-y-2">
-        {menuItems.map((item) => {
+        {allMenuItems.map((item) => {
           const Icon = item.icon;
           return (
             <Button

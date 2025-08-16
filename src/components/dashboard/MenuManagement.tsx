@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'react-hot-toast';
 import { Plus, Edit, Trash2, Leaf } from 'lucide-react';
+import { formatCurrency } from '@/lib/currency';
 
 interface MenuManagementProps {
   restaurant: any;
@@ -272,7 +273,7 @@ export function MenuManagement({ restaurant }: MenuManagementProps) {
                     
                     <div className="flex items-center gap-4 mb-2">
                       <span className="text-lg font-bold text-primary">
-                        ${item.price.toFixed(2)}
+                        {formatCurrency(item.price)}
                       </span>
                       {item.category && (
                         <Badge variant="outline">{item.category}</Badge>

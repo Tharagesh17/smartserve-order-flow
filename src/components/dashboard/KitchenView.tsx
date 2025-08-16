@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'react-hot-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { Clock, ChefHat, List, Package } from 'lucide-react';
+import { formatCurrency } from '@/lib/currency';
 import { BatchView } from './BatchView';
 
 interface KitchenViewProps {
@@ -182,7 +183,7 @@ export function KitchenView({ restaurant }: KitchenViewProps) {
                   <div className="flex justify-between items-center">
                     <span className="font-semibold">Total:</span>
                     <span className="text-lg font-bold text-primary">
-                      ${order.total_amount.toFixed(2)}
+                      {formatCurrency(order.total_amount)}
                     </span>
                   </div>
                 </div>
