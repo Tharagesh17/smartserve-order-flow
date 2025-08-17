@@ -3,11 +3,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'react-hot-toast';
-import { Minus, Plus, Trash2, X } from 'lucide-react';
+import { Minus, Plus, Trash2, X, ShoppingCart, CreditCard, IndianRupee, Clock } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
 
 interface CartProps {
@@ -100,14 +101,23 @@ export function Cart({
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent side="right" className="w-full sm:max-w-md">
-        <SheetHeader>
+      <SheetContent side="right" className="w-full sm:max-w-md p-0">
+        <SheetHeader className="p-6 border-b">
           <div className="flex items-center justify-between">
-            <SheetTitle>Your Order</SheetTitle>
+            <div className="flex items-center gap-3">
+              <div className="bg-primary rounded-full p-2">
+                <ShoppingCart className="h-5 w-5 text-primary-foreground" />
+              </div>
+              <div>
+                <SheetTitle className="text-xl">Your Order</SheetTitle>
+                <p className="text-sm text-muted-foreground">{items.length} items</p>
+              </div>
+            </div>
             <Button
               variant="ghost"
               size="sm"
               onClick={onClose}
+              className="h-8 w-8 p-0"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -115,69 +125,101 @@ export function Cart({
         </SheetHeader>
 
         {items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64">
-            <p className="text-muted-foreground mb-4">Your cart is empty</p>
+          <div className="flex flex-col items-center justify-center h-64 p-6">
+            <div className="bg-muted rounded-full p-4 mb-4">
+              <ShoppingCart className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-semibold mb-2">Your cart is empty</h3>
+            <p className="text-muted-foreground text-center mb-4">
+              Add some delicious items to get started
+            </p>
             <Button onClick={onClose}>Continue Shopping</Button>
           </div>
         ) : (
           <form onSubmit={handleSubmitOrder} className="flex flex-col h-full">
             {/* Cart Items */}
-            <div className="flex-1 space-y-4 py-4">
+            <div className="flex-1 overflow-auto p-6 space-y-4">
               {items.map((item) => (
-                <div key={item.id} className="flex items-center gap-3 p-3 bg-muted rounded-lg">
-                  <div className="flex-1">
-                    <h4 className="font-medium">{item.name}</h4>
-                    <p className="text-sm text-muted-foreground">
-                      {formatCurrency(item.price)} each
-                    </p>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
-                    >
-                      <Minus className="h-3 w-3" />
-                    </Button>
-                    
-                    <span className="w-8 text-center">{item.quantity}</span>
-                    
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
-                    >
-                      <Plus className="h-3 w-3" />
-                    </Button>
-                    
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onUpdateQuantity(item.id, 0)}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </div>
+                <Card key={item.id} className="border-0 shadow-sm">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-4">
+                      {/* Item Image Placeholder */}
+                      <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <span className="text-lg">🍽️</span>
+                      </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-sm truncate">{item.name}</h4>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          {formatCurrency(item.price)} each
+                        </p>
+                        
+                        <div className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Minus className="h-3 w-3" />
+                          </Button>
+                          
+                          <span className="w-8 text-center font-medium">{item.quantity}</span>
+                          
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Plus className="h-3 w-3" />
+                          </Button>
+                          
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onUpdateQuantity(item.id, 0)}
+                            className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      <div className="text-right">
+                        <p className="font-semibold text-sm">
+                          {formatCurrency(item.price * item.quantity)}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               ))}
 
               {/* Total */}
-              <div className="border-t pt-4">
-                <div className="flex justify-between items-center text-lg font-bold">
-                  <span>Total:</span>
-                  <span className="text-primary">{formatCurrency(total)}</span>
-                </div>
-              </div>
+              <Card className="border-0 bg-primary/5">
+                <CardContent className="p-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-lg font-semibold">Total:</span>
+                    <span className="text-2xl font-bold text-primary">
+                      {formatCurrency(total)}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
 
-              {/* Customer Information */}
-              <div className="space-y-4 border-t pt-4">
-                <h3 className="font-semibold">Customer Information</h3>
-                
+            {/* Customer Information */}
+            <div className="p-6 border-t bg-muted/30">
+              <h3 className="font-semibold mb-4 flex items-center gap-2">
+                <IndianRupee className="h-4 w-4" />
+                Customer Information
+              </h3>
+              
+              <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="customer-name">Name (Optional)</Label>
                   <Input
@@ -185,6 +227,7 @@ export function Cart({
                     value={customerInfo.name}
                     onChange={(e) => setCustomerInfo(prev => ({ ...prev, name: e.target.value }))}
                     placeholder="Your name"
+                    className="bg-background"
                   />
                 </div>
 
@@ -196,6 +239,7 @@ export function Cart({
                     value={customerInfo.phone}
                     onChange={(e) => setCustomerInfo(prev => ({ ...prev, phone: e.target.value }))}
                     placeholder="Your phone number"
+                    className="bg-background"
                   />
                 </div>
 
@@ -205,12 +249,18 @@ export function Cart({
                     value={customerInfo.paymentMethod}
                     onValueChange={(value) => setCustomerInfo(prev => ({ ...prev, paymentMethod: value }))}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-background">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="counter">Pay at Counter</SelectItem>
-                      <SelectItem value="online">Pay Online</SelectItem>
+                      <SelectItem value="counter" className="flex items-center gap-2">
+                        <CreditCard className="h-4 w-4" />
+                        Pay at Counter
+                      </SelectItem>
+                      <SelectItem value="online" className="flex items-center gap-2">
+                        <IndianRupee className="h-4 w-4" />
+                        Pay Online
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -218,23 +268,35 @@ export function Cart({
             </div>
 
             {/* Actions */}
-            <div className="space-y-2 border-t pt-4">
-              <Button 
-                type="submit" 
-                className="w-full" 
-                disabled={loading}
-              >
-                {loading ? 'Placing Order...' : 'Place Order'}
-              </Button>
-              
-              <Button 
-                type="button"
-                variant="outline" 
-                className="w-full" 
-                onClick={onClearCart}
-              >
-                Clear Cart
-              </Button>
+            <div className="p-6 border-t bg-background">
+              <div className="space-y-3">
+                <Button 
+                  type="submit" 
+                  className="w-full h-12 text-lg font-semibold" 
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Placing Order...
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4" />
+                      Place Order
+                    </div>
+                  )}
+                </Button>
+                
+                <Button 
+                  type="button"
+                  variant="outline" 
+                  className="w-full" 
+                  onClick={onClearCart}
+                >
+                  Clear Cart
+                </Button>
+              </div>
             </div>
           </form>
         )}
