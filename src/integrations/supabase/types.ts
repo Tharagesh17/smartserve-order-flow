@@ -254,6 +254,53 @@ export type Database = {
         }
         Relationships: []
       }
+      staff: {
+        Row: {
+          id: string
+          restaurant_id: string
+          name: string
+          role: string
+          outlet: string | null
+          email: string | null
+          phone: string | null
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          restaurant_id: string
+          name: string
+          role: string
+          outlet?: string | null
+          email?: string | null
+          phone?: string | null
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          restaurant_id?: string
+          name?: string
+          role?: string
+          outlet?: string | null
+          email?: string | null
+          phone?: string | null
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       restaurants_public: {
