@@ -45,6 +45,16 @@ export function Cart({
 
     setLoading(true);
 
+    // Dynamically load Razorpay SDK when needed
+    const loadRazorpay = () => new Promise<void>((resolve, reject) => {
+      if ((window as any).Razorpay) return resolve();
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error('Razorpay SDK load failed'));
+      document.body.appendChild(script);
+    });
+
     try {
       // Generate order ID
       const { data: orderIdData, error: orderIdError } = await supabase
@@ -86,10 +96,93 @@ export function Cart({
 
       if (itemsError) throw itemsError;
 
-      // Success
-      toast.success('Order placed successfully!');
-      onOrderSuccess({ ...order, order_items: orderItems });
-      onClose();
+      // If not paying online, we finish here
+      if (customerInfo.paymentMethod !== 'online') {
+        toast.success('Order placed successfully!');
+        onOrderSuccess({ ...order, order_items: orderItems });
+        onClose();
+        return;
+      }
+
+      // Online payment path using Razorpay
+      await loadRazorpay();
+
+      const amountPaise = Math.round(total * 100);
+
+      const { data: createResp, error: funcCreateErr } = await (supabase as any).functions.invoke('payments-razorpay', {
+        body: {
+          action: 'create_order',
+          amount: amountPaise,
+          currency: 'INR',
+          receipt: order.order_id,
+          db_order_id: order.id,
+          notes: { restaurant_id: restaurant.id }
+        }
+      });
+
+      if (funcCreateErr || !(createResp?.order?.id) || !(createResp?.key_id)) {
+        throw new Error((funcCreateErr as any)?.message || 'Failed to initialize payment');
+      }
+
+      const key_id = createResp.key_id;
+      const rzpOrder = createResp.order;
+
+      const anyWindow = window as any;
+      const rzp = new anyWindow.Razorpay({
+        key: key_id,
+        amount: amountPaise,
+        currency: 'INR',
+        name: restaurant?.name || 'Order Payment',
+        description: `Order ${order.order_id}`,
+        order_id: rzpOrder.id,
+        prefill: {
+          name: customerInfo.name || '',
+          contact: customerInfo.phone || ''
+        },
+        handler: async (response: any) => {
+          try {
+            const { data: verifyResp, error: funcVerifyErr } = await (supabase as any).functions.invoke('payments-razorpay', {
+              body: {
+                action: 'verify_payment',
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                db_order_id: order.id,
+                amount: amountPaise
+              }
+            });
+
+            if (funcVerifyErr || (verifyResp as any)?.error) {
+              throw new Error((funcVerifyErr as any)?.message || (verifyResp as any)?.error || 'Verification failed');
+            }
+
+            toast.success('Payment successful!');
+
+            // Fetch updated order to reflect payment status
+            const { data: updatedOrder, error: fetchErr } = await supabase
+              .from('orders')
+              .select('*')
+              .eq('id', order.id)
+              .single();
+
+            if (fetchErr) throw fetchErr;
+
+            onOrderSuccess({ ...updatedOrder, order_items: orderItems });
+            onClose();
+          } catch (err) {
+            console.error('Payment verification failed:', err);
+            toast.error('Payment verification failed.');
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            toast('Payment cancelled');
+          }
+        },
+        theme: { color: '#0ea5e9' }
+      });
+
+      rzp.open();
 
     } catch (error) {
       toast.error('Failed to place order. Please try again.');
