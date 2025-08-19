@@ -50,7 +50,7 @@ export function KitchenView({ restaurant }: KitchenViewProps) {
         *,
         order_items (
           *,
-          menu_items (name, price)
+          menu_items (name)
         )
       `)
       .eq('restaurant_id', restaurant.id)
