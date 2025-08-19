@@ -254,7 +254,15 @@ export function Cart({
                       
                       <div className="flex-1 min-w-0">
                         <h4 className="font-semibold text-sm truncate">{item.name}</h4>
-                        <p className="text-sm text-muted-foreground mb-2">
+                        {item.variant_name && (
+                          <p className="text-xs text-muted-foreground">Variant: {item.variant_name} ({formatCurrency(item.variant_price || 0)})</p>
+                        )}
+                        {Array.isArray(item.addons) && item.addons.length > 0 && (
+                          <div className="text-xs text-muted-foreground">
+                            Add-ons: {item.addons.map((a: any) => `${a.name} (${formatCurrency(a.price || 0)})`).join(', ')}
+                          </div>
+                        )}
+                        <p className="text-sm text-muted-foreground mb-2 mt-1">
                           {formatCurrency(item.price)} each
                         </p>
                         
@@ -294,9 +302,7 @@ export function Cart({
                       </div>
                       
                       <div className="text-right">
-                        <p className="font-semibold text-sm">
-                          {formatCurrency(item.price * item.quantity)}
-                        </p>
+                        <p className="font-semibold text-sm">{formatCurrency(item.price * item.quantity)}</p>
                       </div>
                     </div>
                   </CardContent>

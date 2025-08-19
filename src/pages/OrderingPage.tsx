@@ -38,13 +38,27 @@ export default function OrderingPage() {
         return;
       }
 
-      // Fetch menu items
+      // Fetch menu items with relational data
       const { data: menuData, error: menuError } = await supabase
         .from('menu_items')
-        .select('*')
+        .select(`
+          id,
+          name,
+          description,
+          is_veg,
+          is_available,
+          image_url,
+          restaurant_id,
+          created_at,
+          updated_at,
+          calories,
+          categories:category_id ( name ),
+          menu_item_prices ( id, size, price ),
+          menu_item_addons ( id, name, price ),
+          menu_item_allergens ( allergens ( name ) )
+        `)
         .eq('restaurant_id', restaurantId)
-        .eq('is_available', true)
-        .order('category', { ascending: true });
+        .eq('is_available', true);
 
       if (menuError) {
         toast.error('Failed to load menu');
@@ -52,7 +66,25 @@ export default function OrderingPage() {
       }
 
       setRestaurant(restaurantData);
-      setMenuItems(menuData || []);
+      const mapped = (menuData || []).map((mi: any) => {
+        const regular = (mi.menu_item_prices || []).find((p: any) => p.size?.toLowerCase() === 'regular');
+        const minPrice = (mi.menu_item_prices || []).reduce((acc: number | null, p: any) => {
+          if (p?.price == null) return acc;
+          if (acc == null) return p.price;
+          return Math.min(acc, p.price);
+        }, null);
+        const price = regular?.price ?? minPrice ?? 0;
+        const allergy_tags = (mi.menu_item_allergens || [])
+          .map((x: any) => x?.allergens?.name)
+          .filter((n: any) => !!n);
+        return {
+          ...mi,
+          price,
+          category: mi.categories?.name ?? null,
+          allergy_tags,
+        };
+      });
+      setMenuItems(mapped);
     } catch (error) {
       toast.error('Failed to load restaurant data');
     } finally {
