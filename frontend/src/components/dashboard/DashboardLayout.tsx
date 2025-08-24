@@ -9,11 +9,12 @@ import { CashPaymentView } from './CashPaymentView';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import type { Tables } from '@/integrations/supabase/types';
 
 export function DashboardLayout() {
   const { user } = useAuth();
   const [activeView, setActiveView] = useState('dashboard');
-  const [restaurant, setRestaurant] = useState<any>(null);
+  const [restaurant, setRestaurant] = useState<Tables<'restaurants'> | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,8 +29,8 @@ export function DashboardLayout() {
 
       const { data, error } = await supabase
         .from('restaurants')
-        .select('*')
-        .eq('user_id', user.id)
+        .select('id, name, location, contact_email, contact_phone, hotel_type, is_active, ordering_url, qr_code_url, created_at, updated_at, owner_id')
+        .eq('owner_id', user.id)
         .single();
 
       if (error) {
