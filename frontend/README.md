@@ -1,96 +1,309 @@
-# SmartServe - Restaurant Management System
+# SmartServe - Restaurant Management Platform
 
-A comprehensive restaurant management platform with QR code ordering, kitchen management, and customer segmentation by hotel type.
+A comprehensive restaurant management platform built with modern web technologies, featuring QR code ordering, kitchen management, and advanced analytics. Now with **Cash Payment System** and **FIFO Order Queue** for hotel operations!
 
-## Features
+## ✨ **New Features (Latest Update)**
 
-### 🏪 **Hotel Type Segmentation**
-- **Food Cart**: Simple ordering and basic menu management
-- **Restaurant**: Full-service features with staff management
-- **Hotel**: Multi-outlet support with advanced features
+### 💰 **Cash Payment System**
+- **Hotel Staff Authorization**: Only authorized staff can process cash payments
+- **Payment Tracking**: Complete audit trail of cash transactions
+- **Staff Management**: Role-based access control for payment processing
+- **Payment Notes**: Add notes and comments for each cash transaction
+- **Real-time Updates**: Instant payment status updates across the system
 
-### 📱 **Core Features**
-- QR code ordering system
-- Real-time kitchen dashboard
-- Menu management with modifiers
-- Order tracking and management
-- Staff role management
-- Advanced reporting and analytics
+### 🔢 **FIFO Order Queue (First In, First Out)**
+- **Automatic Queue Management**: Orders are automatically queued by arrival time
+- **Priority Override**: High-priority orders can be moved up in the queue
+- **Queue Position Control**: Staff can manually adjust order positions
+- **Wait Time Estimation**: Real-time estimated wait times for customers
+- **Queue Statistics**: Comprehensive analytics on queue performance
+- **Real-time Updates**: Queue refreshes automatically every 30 seconds
 
-### 🚀 **Technology Stack**
-- React + TypeScript
-- Supabase (PostgreSQL + Real-time)
-- Tailwind CSS + shadcn/ui
-- Vite build system
+### 🏨 **Hotel-Specific Features**
+- **Room Billing Integration**: Seamless integration with hotel billing systems
+- **Multi-Outlet Support**: Manage multiple restaurant outlets from one dashboard
+- **Staff Roles**: Manager, Cashier, Kitchen, Waiter roles with specific permissions
+- **Payment Authorization**: Configurable payment processing permissions
 
-## Project info
+## 🚀 **Core Features**
 
-**URL**: https://lovable.dev/projects/e1048765-28a7-412e-bd8d-8d7c64f737bc
+### **QR Code Ordering System**
+- **Instant Ordering**: Customers scan QR codes to place orders instantly
+- **Mobile-First Design**: Optimized for all device sizes
+- **Real-time Updates**: Live order status and progress tracking
+- **Multiple Payment Options**: Online, cash, and counter payment methods
 
-## How can I edit this code?
+### **Kitchen Management**
+- **Real-time Dashboard**: Live view of all pending and preparing orders
+- **Batch Preparation**: Group similar orders for efficient preparation
+- **Order Status Tracking**: From received to completed with timestamps
+- **Kitchen Workflow**: Streamlined order preparation process
 
-There are several ways of editing your application.
+### **Menu Management**
+- **Dynamic Menu Builder**: Easy-to-use interface for menu creation
+- **Category Management**: Organize items by categories and types
+- **Pricing Variants**: Multiple sizes and pricing options
+- **Add-ons & Modifiers**: Customizable item options and extras
+- **Allergen Information**: Comprehensive allergen tracking and display
 
-**Use Lovable**
+### **Analytics & Reporting**
+- **Sales Analytics**: Comprehensive sales data and trends
+- **Order Analytics**: Order patterns and customer behavior insights
+- **Performance Metrics**: Kitchen efficiency and order fulfillment times
+- **Revenue Tracking**: Detailed financial reporting and analysis
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/e1048765-28a7-412e-bd8d-8d7c64f737bc) and start prompting.
+### **Staff Management**
+- **Role-Based Access**: Different permission levels for staff members
+- **Activity Tracking**: Monitor staff actions and performance
+- **Shift Management**: Track working hours and schedules
+- **Payment Authorization**: Control who can process payments
 
-Changes made via Lovable will be committed automatically to this repo.
+## 🎨 **Design System**
 
-**Use your preferred IDE**
+### **Color Palette**
+- **Primary Orange**: #FF7518 - Energy and excitement for CTAs
+- **Primary Blue**: #40E0D0 - Trust and calmness for navigation
+- **Secondary Teal**: #A7BEAE - Subtle accents and highlights
+- **Dark Theme**: Professional dark interface with high contrast
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### **Design Principles**
+- **60/30/10 Rule**: 60% neutrals, 30% blue tones, 10% orange accents
+- **High Contrast**: Minimum 4.5:1 ratio for accessibility
+- **Mobile-First**: Responsive design optimized for all devices
+- **Modern UI**: Clean, professional interface with smooth animations
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## 🛠 **Technology Stack**
 
-Follow these steps:
+### **Frontend**
+- **React 18**: Latest React with concurrent features
+- **TypeScript**: Type-safe development
+- **Tailwind CSS**: Utility-first CSS framework
+- **shadcn/ui**: High-quality component library
+- **Vite**: Fast build tool and dev server
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### **Backend & Database**
+- **Supabase**: Open-source Firebase alternative
+- **PostgreSQL**: Robust relational database
+- **Edge Functions**: Serverless backend functions
+- **Real-time Subscriptions**: Live data updates
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### **State Management**
+- **React Query**: Server state management and caching
+- **Context API**: Local state management
+- **Optimistic Updates**: Smooth user experience
 
-# Step 3: Install the necessary dependencies.
-npm i
+### **Payment Integration**
+- **Razorpay**: Secure online payment processing
+- **Cash Payment System**: Staff-managed cash transactions
+- **Payment Tracking**: Complete transaction history
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+## 📁 **Project Structure**
+
+```
+frontend/
+├── src/
+│   ├── components/
+│   │   ├── dashboard/
+│   │   │   ├── FIFOQueueView.tsx      # New: FIFO order queue management
+│   │   │   ├── CashPaymentView.tsx    # New: Cash payment processing
+│   │   │   ├── OrdersView.tsx         # Order management
+│   │   │   ├── KitchenView.tsx        # Kitchen dashboard
+│   │   │   ├── MenuManagement.tsx     # Menu builder
+│   │   │   └── ReportsView.tsx        # Analytics and reporting
+│   │   ├── ordering/
+│   │   │   ├── Cart.tsx               # Shopping cart with cash payment
+│   │   │   ├── MenuDisplay.tsx        # Customer menu view
+│   │   │   └── RestaurantHeader.tsx   # Restaurant branding
+│   │   └── ui/                        # Reusable UI components
+│   ├── pages/
+│   │   ├── Dashboard.tsx              # Main dashboard
+│   │   ├── OrderingPage.tsx           # Customer ordering interface
+│   │   └── Auth.tsx                   # Authentication
+│   └── integrations/
+│       └── supabase/                  # Database and backend
 ```
 
-**Edit a file directly in GitHub**
+## 🚀 **Getting Started**
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### **Prerequisites**
+- Node.js 18+ and npm/yarn
+- Supabase account and project
+- Razorpay account (for online payments)
 
-**Use GitHub Codespaces**
+### **Installation**
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd smartserve-order-flow
+   ```
 
-## What technologies are used for this project?
+2. **Install dependencies**
+   ```bash
+   cd frontend
+   npm install
+   ```
 
-This project is built with:
+3. **Environment Setup**
+   ```bash
+   cp .env.example .env.local
+   # Fill in your Supabase and Razorpay credentials
+   ```
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+4. **Database Setup**
+   ```bash
+   # Run the migrations in your Supabase project
+   # The new cash payment and FIFO queue tables will be created
+   ```
 
-## How can I deploy this project?
+5. **Start Development Server**
+   ```bash
+   npm run dev
+   ```
 
-Simply open [Lovable](https://lovable.dev/projects/e1048765-28a7-412e-bd8d-8d7c64f737bc) and click on Share -> Publish.
+### **Database Migrations**
 
-## Can I connect a custom domain to my Lovable project?
+The latest update includes new database tables and functions:
 
-Yes, you can!
+- **Staff Management**: `staff` table for role-based access
+- **Cash Payments**: `cash_payments` table for transaction tracking
+- **Order Queue**: `order_queue` table for FIFO management
+- **Payment Functions**: Database functions for processing payments
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## 🔧 **Configuration**
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+### **Staff Roles & Permissions**
+```sql
+-- Create staff member with payment authorization
+INSERT INTO staff (restaurant_id, name, role, can_authorize_payments)
+VALUES ('restaurant-uuid', 'Manager Name', 'manager', true);
+```
+
+### **Payment Authorization**
+- **Managers**: Full payment processing access
+- **Cashiers**: Cash payment processing only
+- **Kitchen Staff**: Order management access
+- **Waiters**: Order viewing access
+
+### **Queue Management**
+- **Automatic Queueing**: Orders are automatically queued by arrival time
+- **Priority Override**: High-priority orders can be moved up
+- **Manual Adjustment**: Staff can reorder queue positions
+- **Real-time Updates**: Queue refreshes every 30 seconds
+
+## 📱 **Usage Guide**
+
+### **For Hotel Staff**
+
+1. **Cash Payment Processing**
+   - Navigate to "Cash Payments" in the dashboard
+   - Select the order to process
+   - Enter payment amount and notes
+   - Confirm payment with staff authorization
+
+2. **Queue Management**
+   - Navigate to "FIFO Queue" in the dashboard
+   - View all orders in queue order
+   - Use arrow buttons to adjust order positions
+   - Monitor estimated wait times
+
+3. **Order Management**
+   - View all orders in real-time
+   - Update order statuses
+   - Process payments and track transactions
+
+### **For Customers**
+
+1. **Placing Orders**
+   - Scan QR code or visit ordering page
+   - Browse menu and add items to cart
+   - Choose payment method (cash, online, or counter)
+   - Complete order and receive confirmation
+
+2. **Payment Options**
+   - **Cash**: Pay at counter (staff will process)
+   - **Online**: Secure payment via Razorpay
+   - **Counter**: Pay at restaurant counter
+
+## 🔒 **Security Features**
+
+- **Staff Authentication**: Role-based access control
+- **Payment Authorization**: Only authorized staff can process payments
+- **Audit Trail**: Complete transaction history and logs
+- **Data Encryption**: Secure data transmission and storage
+- **Session Management**: Secure user sessions and authentication
+
+## 📊 **Performance Features**
+
+- **Real-time Updates**: Live data synchronization
+- **Optimistic UI**: Smooth user experience with instant feedback
+- **Lazy Loading**: Code splitting for faster initial load
+- **Caching**: Intelligent data caching with React Query
+- **Responsive Design**: Optimized for all device sizes
+
+## 🧪 **Testing**
+
+```bash
+# Run unit tests
+npm run test
+
+# Run integration tests
+npm run test:integration
+
+# Run e2e tests
+npm run test:e2e
+```
+
+## 🚀 **Deployment**
+
+### **Production Build**
+```bash
+npm run build
+npm run preview
+```
+
+### **Environment Variables**
+```bash
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_RAZORPAY_KEY_ID=your_razorpay_key
+```
+
+## 🤝 **Contributing**
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## 📄 **License**
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🆘 **Support**
+
+- **Documentation**: [Project Wiki](wiki-url)
+- **Issues**: [GitHub Issues](issues-url)
+- **Discussions**: [GitHub Discussions](discussions-url)
+- **Email**: support@smartserve.com
+
+## 🔮 **Roadmap**
+
+### **Upcoming Features**
+- **Advanced Analytics**: Machine learning insights
+- **Inventory Management**: Stock tracking and alerts
+- **Customer Loyalty**: Rewards and membership system
+- **Multi-language Support**: Internationalization
+- **Mobile Apps**: Native iOS and Android applications
+
+### **Recent Updates**
+- ✅ **Cash Payment System**: Staff-managed cash transactions
+- ✅ **FIFO Order Queue**: First In, First Out order management
+- ✅ **Staff Management**: Role-based access control
+- ✅ **Dark Theme**: Professional dark interface
+- ✅ **Real-time Updates**: Live data synchronization
+
+---
+
+**SmartServe** - Transforming restaurant management with modern technology and intuitive design! 🚀🍽️
