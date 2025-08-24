@@ -8,10 +8,10 @@ interface RestaurantHeaderProps {
 
 export function RestaurantHeader({ restaurant }: RestaurantHeaderProps) {
   return (
-    <div className="relative bg-gradient-to-br from-primary via-primary/95 to-primary/90 text-primary-foreground overflow-hidden">
+    <div className="relative bg-[hsl(var(--nav))] text-primary-foreground overflow-hidden">
       {/* Background Pattern */}
       <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:30px_30px]" />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
       
       <div className="relative container mx-auto px-4 py-12">
         <div className="flex flex-col lg:flex-row items-start lg:items-center gap-8">

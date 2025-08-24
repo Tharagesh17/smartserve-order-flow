@@ -1,133 +1,153 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Sidebar } from './Sidebar';
-import { MenuManagement } from './MenuManagement';
 import { OrdersView } from './OrdersView';
 import { KitchenView } from './KitchenView';
-import { QRCodeView } from './QRCodeView';
+import { MenuManagement } from './MenuManagement';
 import { ReportsView } from './ReportsView';
-import { StaffView } from './StaffView';
-import { SettingsView } from './SettingsView';
-import { getFeatureFlags } from '@/lib/featureFlags';
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
-import { Card } from '@/components/ui/card';
+import { FIFOQueueView } from './FIFOQueueView';
+import { CashPaymentView } from './CashPaymentView';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
-interface DashboardLayoutProps {
-  restaurant: any;
-}
+export function DashboardLayout() {
+  const { user } = useAuth();
+  const [activeView, setActiveView] = useState('dashboard');
+  const [restaurant, setRestaurant] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-export function DashboardLayout({ restaurant }: DashboardLayoutProps) {
-  const [activeView, setActiveView] = useState('menu');
-  const features = getFeatureFlags(restaurant.hotel_type);
+  useEffect(() => {
+    fetchRestaurant();
+  }, [user]);
 
-  const getViewTitle = (view: string) => {
-    switch (view) {
-      case 'menu': return 'Menu Management';
-      case 'orders': return 'Orders';
-      case 'kitchen': return 'Kitchen Dashboard';
-      case 'qr': return 'QR Code';
-      case 'reports': return 'Reports';
-      case 'staff': return 'Staff Management';
-      case 'settings': return 'Settings';
-      default: return 'Dashboard';
+  const fetchRestaurant = async () => {
+    try {
+      setLoading(true);
+      
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('restaurants')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching restaurant:', error);
+        return;
+      }
+
+      setRestaurant(data);
+    } catch (err) {
+      console.error('Unexpected error:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const renderContent = () => {
-    switch (activeView) {
-      case 'menu':
-        return <MenuManagement restaurant={restaurant} />;
-      case 'orders':
-        return <OrdersView restaurant={restaurant} />;
-      case 'kitchen':
-        if (features.canUseKitchenDashboard) {
-          return <KitchenView restaurant={restaurant} />;
-        }
-        return (
-          <Card className="p-8">
-            <div className="text-center">
-              <div className="bg-muted rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                <span className="text-2xl">👨‍🍳</span>
-              </div>
-              <h3 className="text-lg font-semibold mb-2">Kitchen Dashboard Not Available</h3>
-              <p className="text-muted-foreground">
-                Kitchen dashboard is not available for your business type.
-              </p>
-            </div>
-          </Card>
-        );
-      case 'qr':
-        return <QRCodeView restaurant={restaurant} />;
-      case 'reports':
-        if (features.canUseAdvancedReports) {
-          return <ReportsView restaurant={restaurant} />;
-        }
-        return (
-          <Card className="p-8">
-            <div className="text-center">
-              <div className="bg-muted rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                <span className="text-2xl">📊</span>
-              </div>
-              <h3 className="text-lg font-semibold mb-2">Reports Not Available</h3>
-              <p className="text-muted-foreground">
-                Advanced reporting is not available for your business type.
-              </p>
-            </div>
-          </Card>
-        );
-      case 'staff':
-        if (features.canUseStaffRoles) {
-          return <StaffView restaurant={restaurant} />;
-        }
-        return (
-          <Card className="p-8">
-            <div className="text-center">
-              <div className="bg-muted rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                <span className="text-2xl">👥</span>
-              </div>
-              <h3 className="text-lg font-semibold mb-2">Staff Management Not Available</h3>
-              <p className="text-muted-foreground">
-                Staff management is not available for your business type.
-              </p>
-            </div>
-          </Card>
-        );
-      case 'settings':
-        return <SettingsView restaurant={restaurant} />;
-      default:
-        return <MenuManagement restaurant={restaurant} />;
-    }
-  };
-
-  return (
-    <div className="min-h-screen bg-background flex">
-      <Sidebar
-        restaurant={restaurant}
-        activeView={activeView}
-        onViewChange={setActiveView}
-      />
-      <main className="flex-1 overflow-auto">
-        {/* Header with Breadcrumbs */}
-        <div className="border-b bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/50">
-          <div className="flex h-16 items-center px-6">
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator className="hidden md:block" />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>{getViewTitle(activeView)}</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
+  const renderView = () => {
+    if (!restaurant) {
+      return (
+        <div className="flex items-center justify-center h-screen">
+          <div className="text-center">
+            <LoadingSpinner size="xl" />
+            <p className="mt-4 text-muted-foreground">Loading restaurant data...</p>
           </div>
         </div>
-        
-        {/* Main Content */}
-        <div className="p-6">
-          {renderContent()}
-        </div>
-      </main>
+      );
+    }
+
+    switch (activeView) {
+      case 'dashboard':
+        return (
+          <div className="p-8">
+            <div className="text-center">
+              <h1 className="text-4xl font-bold text-foreground mb-4">Welcome to SmartServe</h1>
+              <p className="text-xl text-muted-foreground mb-8">
+                Manage your restaurant operations efficiently
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl mx-auto">
+                <div className="bg-card p-6 rounded-lg border border-border hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveView('orders')}>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">Orders</h3>
+                  <p className="text-muted-foreground">View and manage incoming orders</p>
+                </div>
+                
+                <div className="bg-card p-6 rounded-lg border border-border hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveView('kitchen')}>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">Kitchen</h3>
+                  <p className="text-muted-foreground">Monitor order preparation</p>
+                </div>
+                
+                <div className="bg-card p-6 rounded-lg border border-border hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveView('fifo-queue')}>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">FIFO Queue</h3>
+                  <p className="text-muted-foreground">Manage order priority and queue</p>
+                </div>
+                
+                <div className="bg-card p-6 rounded-lg border border-border hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveView('cash-payment')}>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">Cash Payments</h3>
+                  <p className="text-muted-foreground">Process cash payments</p>
+                </div>
+                
+                <div className="bg-card p-6 rounded-lg border border-border hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveView('menu')}>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">Menu</h3>
+                  <p className="text-muted-foreground">Manage your menu items</p>
+                </div>
+                
+                <div className="bg-card p-6 rounded-lg border border-border hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveView('reports')}>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">Reports</h3>
+                  <p className="text-muted-foreground">View analytics and insights</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      
+      case 'orders':
+        return <OrdersView restaurant={restaurant} />;
+      
+      case 'kitchen':
+        return <KitchenView restaurant={restaurant} />;
+      
+      case 'menu':
+        return <MenuManagement restaurant={restaurant} />;
+      
+      case 'reports':
+        return <ReportsView restaurant={restaurant} />;
+      
+      case 'fifo-queue':
+        return <FIFOQueueView restaurant={restaurant} />;
+      
+      case 'cash-payment':
+        return <CashPaymentView restaurant={restaurant} />;
+      
+      default:
+        return (
+          <div className="p-8">
+            <h1 className="text-2xl font-bold text-foreground">View Not Found</h1>
+            <p className="text-muted-foreground">The requested view is not available.</p>
+          </div>
+        );
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <LoadingSpinner size="xl" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-screen bg-background">
+      <Sidebar 
+        activeView={activeView} 
+        onViewChange={setActiveView} 
+        restaurant={restaurant} 
+      />
+      <div className="flex-1 overflow-auto">
+        {renderView()}
+      </div>
     </div>
   );
 }

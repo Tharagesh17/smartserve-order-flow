@@ -1,49 +1,169 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Leaf, Clock, Star } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import { formatCurrency } from '@/lib/currency';
+import { Leaf, Star, QrCode, ChefHat, Clock, TrendingUp } from 'lucide-react';
 
-interface MenuDisplayProps {
-  menuItems: any[];
-  onAddToCart: (item: any, quantity: number) => void;
+interface MenuItem {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  category: string;
+  is_vegetarian: boolean;
+  is_popular: boolean;
+  image_url?: string;
 }
 
-export function MenuDisplay({ menuItems, onAddToCart }: MenuDisplayProps) {
-  const [filter, setFilter] = useState('all');
-  const [selectedVariants, setSelectedVariants] = useState<Record<string, string | null>>({});
-  const [selectedAddons, setSelectedAddons] = useState<Record<string, Set<string>>>({});
+interface MenuDisplayProps {
+  restaurant: any;
+  onAddToCart: (item: MenuItem) => void;
+}
 
-  const categories = ['all', ...new Set(menuItems.map(item => item.category).filter(Boolean))];
-  
+export function MenuDisplay({ restaurant, onAddToCart }: MenuDisplayProps) {
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [filter, setFilter] = useState<'all' | 'veg' | 'non-veg'>('all');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchMenuItems();
+  }, [restaurant.id]);
+
+  const fetchMenuItems = async () => {
+    try {
+      setLoading(true);
+      
+      const { data, error } = await supabase
+        .from('menu_items')
+        .select('*')
+        .eq('restaurant_id', restaurant.id)
+        .eq('is_active', true)
+        .order('category')
+        .order('name');
+
+      if (error) {
+        console.error('Error fetching menu items:', error);
+        toast.error('Failed to load menu');
+      } else {
+        setMenuItems(data || []);
+        
+        // Extract unique categories
+        const uniqueCategories = [...new Set(data?.map(item => item.category) || [])];
+        setCategories(uniqueCategories);
+      }
+    } catch (err) {
+      console.error('Unexpected error:', err);
+      toast.error('An unexpected error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const filteredItems = menuItems.filter(item => {
-    if (filter === 'all') return true;
-    if (filter === 'veg') return item.is_veg;
-    if (filter === 'non-veg') return !item.is_veg;
-    return item.category === filter;
+    const categoryMatch = selectedCategory === 'all' || item.category === selectedCategory;
+    const filterMatch = filter === 'all' || 
+      (filter === 'veg' && item.is_vegetarian) ||
+      (filter === 'non-veg' && !item.is_vegetarian);
+    
+    return categoryMatch && filterMatch;
   });
 
+  const handleAddToCart = (item: MenuItem) => {
+    onAddToCart(item);
+    toast.success(`${item.name} added to cart`);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[hsl(var(--primary))] mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading menu...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-8">
-      {/* Enhanced Filters */}
-      <div className="bg-card rounded-lg p-4 border shadow-sm">
-        <div className="flex flex-wrap gap-2">
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="text-center">
+        <h1 className="text-3xl font-bold text-foreground mb-2">{restaurant.name}</h1>
+        <p className="text-muted-foreground mb-6">{restaurant.description || 'Delicious food, fast service'}</p>
+        
+        {/* Feature Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <Card className="text-center p-4 border-0 shadow-md bg-card hover:shadow-lg transition-shadow">
+            <div className="bg-[hsl(var(--primary))]/10 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <QrCode className="h-8 w-8 text-[hsl(var(--primary))]" />
+            </div>
+            <h3 className="font-semibold text-foreground mb-2">Quick Ordering</h3>
+            <p className="text-sm text-muted-foreground">Scan QR code to order instantly</p>
+          </Card>
+          
+          <Card className="text-center p-4 border-0 shadow-md bg-card hover:shadow-lg transition-shadow">
+            <div className="bg-[hsl(var(--success))]/10 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Clock className="h-8 w-8 text-[hsl(var(--success))]" />
+            </div>
+            <h3 className="font-semibold text-foreground mb-2">Fast Service</h3>
+            <p className="text-sm text-muted-foreground">Orders prepared in minutes</p>
+          </Card>
+          
+          <Card className="text-center p-4 border-0 shadow-md bg-card hover:shadow-lg transition-shadow">
+            <div className="bg-[hsl(var(--secondary))]/10 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <ChefHat className="h-8 w-8 text-[hsl(var(--secondary))]" />
+            </div>
+            <h3 className="font-semibold text-foreground mb-2">Fresh Food</h3>
+            <p className="text-sm text-muted-foreground">Made fresh every day</p>
+          </Card>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-wrap gap-3 justify-center">
+        {/* Category Filter */}
+        <div className="flex gap-2">
+          <Button
+            variant={selectedCategory === 'all' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSelectedCategory('all')}
+            className="bg-[hsl(var(--primary))] hover:bg-[hsl(var(--primary))]/90 text-white border-[hsl(var(--primary))] hover:border-[hsl(var(--primary))]/90"
+          >
+            All
+          </Button>
+          {categories.map((category) => (
+            <Button
+              key={category}
+              variant={selectedCategory === category ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSelectedCategory(category)}
+              className="bg-[hsl(var(--primary))] hover:bg-[hsl(var(--primary))]/90 text-white border-[hsl(var(--primary))] hover:border-[hsl(var(--primary))]/90"
+            >
+              {category}
+            </Button>
+          ))}
+        </div>
+
+        {/* Dietary Filter */}
+        <div className="flex gap-2">
           <Button
             variant={filter === 'all' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setFilter('all')}
-            className="transition-all duration-200"
+            className="bg-[hsl(var(--primary))] hover:bg-[hsl(var(--primary))]/90 text-white border-[hsl(var(--primary))] hover:border-[hsl(var(--primary))]/90"
           >
-            All Items
+            All
           </Button>
           <Button
             variant={filter === 'veg' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setFilter('veg')}
-            className="bg-green-500 hover:bg-green-600 text-white border-green-500 hover:border-green-600"
+            className="bg-[hsl(var(--success))] hover:bg-[hsl(var(--success))]/90 text-white border-[hsl(var(--success))] hover:border-[hsl(var(--success))]/90"
           >
             <Leaf className="h-3 w-3 mr-1" />
             Vegetarian
@@ -52,200 +172,94 @@ export function MenuDisplay({ menuItems, onAddToCart }: MenuDisplayProps) {
             variant={filter === 'non-veg' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setFilter('non-veg')}
-            className="transition-all duration-200"
+            className="bg-[hsl(var(--secondary)] hover:bg-[hsl(var(--secondary))]/90 text-white border-[hsl(var(--secondary))] hover:border-[hsl(var(--secondary))]/90"
           >
             Non-Vegetarian
           </Button>
-          {categories.filter(cat => cat !== 'all').map(category => (
-            <Button
-              key={category}
-              variant={filter === category ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setFilter(category)}
-              className="capitalize transition-all duration-200"
-            >
-              {category}
-            </Button>
-          ))}
         </div>
       </div>
 
-      {/* Menu Items Grid */}
+      {/* Menu Items */}
       {filteredItems.length === 0 ? (
-        <Card className="p-12">
-          <div className="text-center">
-            <div className="bg-muted rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-              <span className="text-2xl">🍽️</span>
-            </div>
-            <h3 className="text-lg font-semibold mb-2">No items found</h3>
-            <p className="text-muted-foreground">Try adjusting your filters to see more options</p>
-          </div>
-        </Card>
+        <div className="text-center py-12">
+          <div className="text-6xl mb-4">🍽️</div>
+          <h3 className="text-xl font-semibold text-foreground mb-2">No items found</h3>
+          <p className="text-muted-foreground">
+            Try adjusting your filters or check back later
+          </p>
+        </div>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {filteredItems.map((item) => {
-            const variants = (item.menu_item_prices || []) as Array<{ id: string; size: string; price: number }>;
-            const addons = (item.menu_item_addons || []) as Array<{ id: string; name: string; price: number }>;
-            const selectedVariantId = selectedVariants[item.id] || (variants[0]?.id ?? null);
-            const selectedVariant = variants.find(v => v.id === selectedVariantId) || variants[0];
-            const addonSet = selectedAddons[item.id] || new Set<string>();
-            const addonList = addons.filter(a => addonSet.has(a.id));
-            const computedPrice = (selectedVariant?.price || item.price || 0) + addonList.reduce((s, a) => s + (a.price || 0), 0);
-            return (
-            <Card key={item.id} className="group hover:shadow-lg transition-all duration-300 overflow-hidden border-0 shadow-md">
-              <CardContent className="p-0">
-                {/* Item Image Placeholder */}
-                {item.image_url ? (
-                  <div className="h-48 bg-muted flex items-center justify-center overflow-hidden">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={item.image_url} alt={item.name} className="w-full h-48 object-cover" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredItems.map((item) => (
+            <Card key={item.id} className="group hover:shadow-lg transition-all duration-300 border-0 shadow-md hover:scale-105 bg-card">
+              <CardHeader className="pb-3">
+                <div className="flex justify-between items-start mb-2">
+                  <div className="flex-1">
+                    <CardTitle className="text-lg text-foreground group-hover:text-[hsl(var(--primary))] transition-colors">
+                      {item.name}
+                    </CardTitle>
+                    <p className="text-sm text-muted-foreground line-clamp-2">
+                      {item.description}
+                    </p>
                   </div>
-                ) : (
-                  <div className="h-48 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
-                    <div className="text-4xl opacity-50">🍽️</div>
-                  </div>
-                )}
+                  {item.is_popular && (
+                    <Badge 
+                      variant="secondary" 
+                      className="bg-[hsl(var(--primary))]/10 text-[hsl(var(--primary))] border-[hsl(var(--primary))]/30"
+                    >
+                      <Star className="h-3 w-3 mr-1 fill-[hsl(var(--primary))]" />
+                      Popular
+                    </Badge>
+                  )}
+                </div>
                 
-                <div className="p-6">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">
-                          {item.name}
-                        </h3>
-                        {item.is_veg && (
-                          <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">
-                            <Leaf className="h-3 w-3 mr-1" />
-                            Veg
-                          </Badge>
-                        )}
-                      </div>
-                      
-                      {item.description && (
-                        <p className="text-sm text-muted-foreground mb-3 leading-relaxed">
-                          {item.description}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-4">
-                      <span className="text-2xl font-bold text-primary">
-                        {formatCurrency(computedPrice)}
-                      </span>
-                      {item.category && (
-                        <Badge variant="outline" className="text-xs">
-                          {item.category}
-                        </Badge>
-                      )}
-                    </div>
-                    
-                    {/* Popular Badge */}
-                    {Math.random() > 0.7 && (
-                      <Badge variant="secondary" className="bg-orange-100 text-orange-800 border-orange-200">
-                        <Star className="h-3 w-3 mr-1 fill-orange-400" />
-                        Popular
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl font-bold text-[hsl(var(--primary))]">
+                      {formatCurrency(item.price)}
+                    </span>
+                    {item.is_vegetarian && (
+                      <Badge variant="outline" className="text-xs border-green-500 text-green-500">
+                        <Leaf className="h-2 w-2 mr-1" />
+                        Veg
                       </Badge>
                     )}
                   </div>
-
-                  {/* Variants */}
-                  {variants.length > 0 && (
-                    <div className="mb-3">
-                      <div className="text-xs text-muted-foreground mb-1">Choose size</div>
-                      <Select value={selectedVariantId || ''} onValueChange={(v) => {
-                        setSelectedVariants(prev => ({ ...prev, [item.id]: v }));
-                      }}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select variant" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {variants.map(v => (
-                            <SelectItem key={v.id} value={v.id}>{v.size} - {formatCurrency(v.price)}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-
-                  {/* Add-ons */}
-                  {addons.length > 0 && (
-                    <div className="mb-4">
-                      <div className="text-xs text-muted-foreground mb-2">Add-ons</div>
-                      <div className="space-y-2">
-                        {addons.map(a => {
-                          const checked = (selectedAddons[item.id] || new Set()).has(a.id);
-                          return (
-                            <label key={a.id} className="flex items-center gap-2 text-sm">
-                              <Checkbox
-                                checked={checked}
-                                onCheckedChange={(v) => {
-                                  setSelectedAddons(prev => {
-                                    const curr = new Set(prev[item.id] || []);
-                                    if (v) { curr.add(a.id); } else { curr.delete(a.id); }
-                                    return { ...prev, [item.id]: curr };
-                                  });
-                                }}
-                              />
-                              <span>{a.name} ({formatCurrency(a.price)})</span>
-                            </label>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Preparation Time */}
-                  <div className="flex items-center gap-2 mb-4 text-sm text-muted-foreground">
-                    <Clock className="h-3 w-3" />
-                    <span>15-20 min</span>
-                  </div>
-
-                  {/* Allergy Tags */}
-                  {item.allergy_tags && item.allergy_tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mb-4">
-                      {item.allergy_tags.map((tag: string) => (
-                        <Badge 
-                          key={tag} 
-                          variant="secondary" 
-                          className="text-xs bg-red-50 text-red-700 border-red-200"
-                        >
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Add to Cart Button */}
-                  <Button 
-                    onClick={() => {
-                      const selectedVariantFinal = variants.find(v => v.id === (selectedVariants[item.id] || variants[0]?.id));
-                      const addonIds = Array.from(selectedAddons[item.id] || []);
-                      const addonsChosen = addons.filter(a => addonIds.includes(a.id));
-                      const finalUnitPrice = (selectedVariantFinal?.price || item.price || 0) + addonsChosen.reduce((s, a) => s + (a.price || 0), 0);
-                      onAddToCart({
-                        ...item,
-                        variant_id: selectedVariantFinal?.id || null,
-                        variant_name: selectedVariantFinal?.size || null,
-                        variant_price: selectedVariantFinal?.price || null,
-                        addon_ids: addonIds,
-                        addons: addonsChosen,
-                        price: finalUnitPrice,
-                      }, 1);
-                    }}
-                    className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-200"
-                    size="lg"
+                  
+                  <Button
+                    onClick={() => handleAddToCart(item)}
+                    size="sm"
+                    className="bg-[hsl(var(--primary))] hover:bg-[hsl(var(--primary))]/90 text-white"
                   >
-                    <Plus className="h-4 w-4 mr-2" />
                     Add to Cart
                   </Button>
                 </div>
-              </CardContent>
+              </CardHeader>
             </Card>
-          );})}
+          ))}
         </div>
       )}
+
+      {/* Bottom CTA */}
+      <div className="text-center py-8">
+        <Card className="border-0 shadow-lg bg-gradient-to-r from-[hsl(var(--primary))]/10 to-[hsl(var(--success))]/10 bg-card">
+          <CardContent className="p-6">
+            <h3 className="text-xl font-semibold text-foreground mb-2">
+              Ready to order?
+            </h3>
+            <p className="text-muted-foreground mb-4">
+              Your delicious food is just a few clicks away
+            </p>
+            <Button 
+              size="lg" 
+              className="bg-[hsl(var(--primary))] hover:bg-[hsl(var(--primary))]/90 text-white"
+            >
+              <TrendingUp className="h-4 w-4 mr-2" />
+              Start Ordering
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
