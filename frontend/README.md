@@ -104,9 +104,8 @@ frontend/
 ├── src/
 │   ├── components/
 │   │   ├── dashboard/
-│   │   │   ├── FIFOQueueView.tsx      # New: FIFO order queue management
 │   │   │   ├── CashPaymentView.tsx    # New: Cash payment processing
-│   │   │   ├── OrdersView.tsx         # Order management
+│   │   │   ├── OrdersView.tsx         # Order management with FIFO queue
 │   │   │   ├── KitchenView.tsx        # Kitchen dashboard
 │   │   │   ├── MenuManagement.tsx     # Menu builder
 │   │   │   └── ReportsView.tsx        # Analytics and reporting
@@ -186,10 +185,11 @@ VALUES ('restaurant-uuid', 'Manager Name', 'manager', true);
 - **Waiters**: Order viewing access
 
 ### **Queue Management**
-- **Automatic Queueing**: Orders are automatically queued by arrival time
-- **Priority Override**: High-priority orders can be moved up
-- **Manual Adjustment**: Staff can reorder queue positions
-- **Real-time Updates**: Queue refreshes every 30 seconds
+- **Integrated Queue**: FIFO queue functionality is now integrated into OrdersView
+- **Status-based Organization**: Orders are organized by status (Pending, Ready, Completed)
+- **Priority Override**: High-priority orders can be moved up in the queue
+- **Manual Adjustment**: Staff can reorder queue positions for pending orders
+- **Real-time Updates**: Orders update automatically via Supabase subscriptions
 
 ## 📱 **Usage Guide**
 

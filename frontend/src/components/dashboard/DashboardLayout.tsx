@@ -7,7 +7,7 @@ import { QRCodeView } from './QRCodeView';
 
 import { MenuManagement } from './MenuManagement';
 import { ReportsView } from './ReportsView';
-import { FIFOQueueView } from './FIFOQueueView';
+
 import { CashPaymentView } from './CashPaymentView';
 import { StaffView } from './StaffView';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
@@ -83,10 +83,7 @@ export function DashboardLayout() {
                   <p className="text-muted-foreground">Monitor order preparation</p>
                 </div>
                 
-                <div className="bg-card p-6 rounded-lg border border-border hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveView('fifo-queue')}>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">FIFO Queue</h3>
-                  <p className="text-muted-foreground">Manage order priority and queue</p>
-                </div>
+
                 
                 <div className="bg-card p-6 rounded-lg border border-border hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setActiveView('cash-payment')}>
                   <h3 className="text-lg font-semibold text-foreground mb-2">Cash Payments</h3>
@@ -119,8 +116,7 @@ export function DashboardLayout() {
       case 'reports':
         return <ReportsView restaurant={restaurant} />;
       
-      case 'fifo-queue':
-        return <FIFOQueueView restaurant={restaurant} />;
+
       
       case 'cash-payment':
         return <CashPaymentView restaurant={restaurant} />;

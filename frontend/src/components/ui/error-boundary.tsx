@@ -54,7 +54,14 @@ class ErrorBoundaryClass extends React.Component<ErrorBoundaryProps, ErrorBounda
 }
 
 function DefaultErrorFallback({ error, resetError }: { error: Error; resetError: () => void }) {
-  const navigate = useNavigate();
+  // Check if we're in a Router context before using useNavigate
+  let navigate: any = null;
+  try {
+    navigate = useNavigate();
+  } catch (err) {
+    // If useNavigate fails, we're not in a Router context
+    console.warn('useNavigate not available - not in Router context');
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -94,14 +101,16 @@ function DefaultErrorFallback({ error, resetError }: { error: Error; resetError:
               <RefreshCw className="h-4 w-4 mr-2" />
               Try Again
             </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => navigate('/')}
-              className="w-full"
-            >
-              <Home className="h-4 w-4 mr-2" />
-              Go Home
-            </Button>
+            {navigate && (
+              <Button 
+                variant="outline" 
+                onClick={() => navigate('/')}
+                className="w-full"
+              >
+                <Home className="h-4 w-4 mr-2" />
+                Go Home
+              </Button>
+            )}
           </div>
           
           <p className="text-xs text-muted-foreground text-center">

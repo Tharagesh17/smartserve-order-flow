@@ -11,7 +11,6 @@ import { ShoppingCart } from 'lucide-react';
 export default function OrderingPage() {
   const { restaurantId } = useParams();
   const [restaurant, setRestaurant] = useState(null);
-  const [menuItems, setMenuItems] = useState([]);
   const [cartItems, setCartItems] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(null);
@@ -26,65 +25,19 @@ export default function OrderingPage() {
   const fetchRestaurantData = async () => {
     try {
       // Fetch restaurant details
-    // Use the secure public view that excludes sensitive contact information
-    const { data: restaurantData, error: restaurantError } = await supabase
-      .from('restaurants_public')
-      .select('*')
-      .eq('id', restaurantId)
-      .single();
+      // Use the secure public view that excludes sensitive contact information
+      const { data: restaurantData, error: restaurantError } = await supabase
+        .from('restaurants_public')
+        .select('*')
+        .eq('id', restaurantId)
+        .single();
 
       if (restaurantError || !restaurantData) {
         toast.error('Restaurant not found or inactive');
         return;
       }
 
-      // Fetch menu items with relational data
-      const { data: menuData, error: menuError } = await supabase
-        .from('menu_items')
-        .select(`
-          id,
-          name,
-          description,
-          is_veg,
-          is_available,
-          image_url,
-          restaurant_id,
-          created_at,
-          updated_at,
-          calories,
-          categories:category_id ( name ),
-          menu_item_prices ( id, size, price ),
-          menu_item_addons ( id, name, price ),
-          menu_item_allergens ( allergens ( name ) )
-        `)
-        .eq('restaurant_id', restaurantId)
-        .eq('is_available', true);
-
-      if (menuError) {
-        toast.error('Failed to load menu');
-        return;
-      }
-
       setRestaurant(restaurantData);
-      const mapped = (menuData || []).map((mi: any) => {
-        const regular = (mi.menu_item_prices || []).find((p: any) => p.size?.toLowerCase() === 'regular');
-        const minPrice = (mi.menu_item_prices || []).reduce((acc: number | null, p: any) => {
-          if (p?.price == null) return acc;
-          if (acc == null) return p.price;
-          return Math.min(acc, p.price);
-        }, null);
-        const price = regular?.price ?? minPrice ?? 0;
-        const allergy_tags = (mi.menu_item_allergens || [])
-          .map((x: any) => x?.allergens?.name)
-          .filter((n: any) => !!n);
-        return {
-          ...mi,
-          price,
-          category: mi.categories?.name ?? null,
-          allergy_tags,
-        };
-      });
-      setMenuItems(mapped);
     } catch (error) {
       toast.error('Failed to load restaurant data');
     } finally {
@@ -170,7 +123,7 @@ export default function OrderingPage() {
       {/* Main Content */}
       <div className="container mx-auto px-4 py-6">
         <MenuDisplay 
-          menuItems={menuItems} 
+          restaurant={restaurant} 
           onAddToCart={addToCart}
         />
       </div>

@@ -11,11 +11,19 @@ interface MenuItem {
   id: string;
   name: string;
   description: string;
-  price: number;
-  category: string;
-  is_vegetarian: boolean;
-  is_popular: boolean;
+  price?: number;
+  categories?: {
+    name: string;
+  };
+  is_veg: boolean;
+  is_popular?: boolean;
   image_url?: string;
+  is_available?: boolean;
+  restaurant_id?: string;
+  created_at?: string;
+  updated_at?: string;
+  category_id?: string;
+  calories?: number;
 }
 
 interface MenuDisplayProps {
@@ -31,21 +39,29 @@ export function MenuDisplay({ restaurant, onAddToCart }: MenuDisplayProps) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchMenuItems();
-  }, [restaurant.id]);
+    if (restaurant?.id) {
+      fetchMenuItems();
+    }
+  }, [restaurant?.id]);
 
   const fetchMenuItems = async () => {
     try {
       setLoading(true);
       
+      if (!restaurant?.id) {
+        console.error('Restaurant ID is required');
+        toast.error('Restaurant information not available');
+        return;
+      }
+      
       const { data, error } = await supabase
         .from('menu_items')
         .select(`
           id, name, description, image_url, is_available, is_veg, restaurant_id, created_at, updated_at, category_id, calories,
-          categories(name)
+          categories(name),
+          menu_item_prices(id, size, price)
         `)
         .eq('restaurant_id', restaurant.id)
-        .eq('is_active', true)
         .order('categories(name)')
         .order('name');
 
@@ -53,10 +69,26 @@ export function MenuDisplay({ restaurant, onAddToCart }: MenuDisplayProps) {
         console.error('Error fetching menu items:', error);
         toast.error('Failed to load menu');
       } else {
-        setMenuItems(data || []);
+        // Process menu items to calculate prices
+        const processedItems = (data || []).map((item: any) => {
+          const regular = (item.menu_item_prices || []).find((p: any) => p.size?.toLowerCase() === 'regular');
+          const minPrice = (item.menu_item_prices || []).reduce((acc: number | null, p: any) => {
+            if (p?.price == null) return acc;
+            if (acc == null) return p.price;
+            return Math.min(acc, p.price);
+          }, null);
+          const price = regular?.price ?? minPrice ?? 0;
+          
+          return {
+            ...item,
+            price
+          };
+        });
+        
+        setMenuItems(processedItems);
         
         // Extract unique categories
-        const uniqueCategories = [...new Set(data?.map(item => item.categories?.name || 'Uncategorized').filter(Boolean)) || [])];
+        const uniqueCategories = [...new Set(processedItems.map(item => item.categories?.name || 'Uncategorized').filter(Boolean)) || []];
         setCategories(uniqueCategories);
       }
     } catch (err) {
@@ -68,10 +100,10 @@ export function MenuDisplay({ restaurant, onAddToCart }: MenuDisplayProps) {
   };
 
   const filteredItems = menuItems.filter(item => {
-    const categoryMatch = selectedCategory === 'all' || item.category === selectedCategory;
+    const categoryMatch = selectedCategory === 'all' || item.categories?.name === selectedCategory;
     const filterMatch = filter === 'all' || 
-      (filter === 'veg' && item.is_vegetarian) ||
-      (filter === 'non-veg' && !item.is_vegetarian);
+      (filter === 'veg' && item.is_veg) ||
+      (filter === 'non-veg' && !item.is_veg);
     
     return categoryMatch && filterMatch;
   });
@@ -80,6 +112,20 @@ export function MenuDisplay({ restaurant, onAddToCart }: MenuDisplayProps) {
     onAddToCart(item);
     toast.success(`${item.name} added to cart`);
   };
+
+  if (!restaurant) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="text-6xl mb-4">🏪</div>
+          <h3 className="text-xl font-semibold text-foreground mb-2">Restaurant Not Found</h3>
+          <p className="text-muted-foreground">
+            The restaurant information is not available
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -125,6 +171,8 @@ export function MenuDisplay({ restaurant, onAddToCart }: MenuDisplayProps) {
             <p className="text-sm text-muted-foreground">Made fresh every day</p>
           </Card>
         </div>
+        <h1 className="text-4xl font-bold text-foreground mb-2">Menu</h1>
+
       </div>
 
       {/* Filters */}
@@ -150,18 +198,12 @@ export function MenuDisplay({ restaurant, onAddToCart }: MenuDisplayProps) {
               {category}
             </Button>
           ))}
+
         </div>
 
         {/* Dietary Filter */}
         <div className="flex gap-2">
-          <Button
-            variant={filter === 'all' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setFilter('all')}
-            className="bg-[hsl(var(--primary))] hover:bg-[hsl(var(--primary))]/90 text-white border-[hsl(var(--primary))] hover:border-[hsl(var(--primary))]/90"
-          >
-            All
-          </Button>
+
           <Button
             variant={filter === 'veg' ? 'default' : 'outline'}
             size="sm"
@@ -221,7 +263,7 @@ export function MenuDisplay({ restaurant, onAddToCart }: MenuDisplayProps) {
                     <span className="text-2xl font-bold text-[hsl(var(--primary))]">
                       {formatCurrency(item.price)}
                     </span>
-                    {item.is_vegetarian && (
+                    {item.is_veg && (
                       <Badge variant="outline" className="text-xs border-green-500 text-green-500">
                         <Leaf className="h-2 w-2 mr-1" />
                         Veg

@@ -58,13 +58,6 @@ const baseMenuItems = [
 
 const conditionalMenuItems = [
   {
-    id: 'fifo-queue',
-    label: 'FIFO Queue',
-    description: 'Manage order priority and queue',
-    icon: Hash,
-    badge: 'New'
-  },
-  {
     id: 'cash-payment',
     label: 'Cash Payments',
     description: 'Process cash payments',
@@ -85,19 +78,18 @@ const conditionalMenuItems = [
     icon: QrCode,
     badge: 'Pro'
   },
-  {
-    id: 'batch',
-    label: 'Batch View',
-    description: 'Kitchen batch preparation',
-    icon: Clock,
-    badge: 'Pro'
-  }
+  // {
+  //   id: 'batch',
+  //   label: 'Batch View',
+  //   description: 'Kitchen batch preparation',
+  //   icon: Clock,
+  //   badge: 'Pro'
+  // }
 ];
 
 export function Sidebar({ activeView, onViewChange, restaurant }: SidebarProps) {
   return (
-    <div className="w-72 bg-[hsl(var(--sidebar-background))] border-r border-[hsl(var(--sidebar-border))] flex flex-col h-screen text-[hsl(var(--sidebar-foreground))]">
-      {/* Header */}
+    <div className="w-72 bg-[hsl(var(--sidebar-background))] border-r border-[hsl(var(--sidebar-border))] flex flex-col h-screen text-[hsl(var(--sidebar-foreground))] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent">   
       <div className="p-6 border-b border-[hsl(var(--sidebar-border))]">
         <div className="flex items-center gap-3 mb-4">
           <div className="bg-gradient-to-br from-[hsl(var(--sidebar-primary))] to-[hsl(var(--sidebar-primary))]/80 rounded-xl p-3 shadow-lg">
