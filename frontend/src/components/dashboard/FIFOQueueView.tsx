@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -56,14 +57,39 @@ export function FIFOQueueView({ restaurant }: FIFOQueueViewProps) {
       setLoading(true);
       setError(null);
       
-      const response = await fetch(`/functions/v1/cash-payment/fifo-queue/${restaurant.id}`);
-      const result = await response.json();
-      
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to fetch queue');
+      // Fetch orders directly and implement FIFO logic in frontend
+      const { data, error } = await supabase
+        .from('orders')
+        .select(`
+          id,
+          order_id,
+          customer_name,
+          total_amount,
+          order_status,
+          created_at
+        `)
+        .eq('restaurant_id', restaurant.id)
+        .in('order_status', ['received', 'preparing'])
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        throw new Error(error.message);
       }
-      
-      setOrders(result.data || []);
+
+      // Transform data to match FIFOOrder interface with frontend queue logic
+      const transformedOrders = (data || []).map((order, index) => ({
+        order_id: order.id,
+        order_number: order.order_id,
+        customer_name: order.customer_name || 'Walk-in Customer',
+        total_amount: order.total_amount,
+        queue_position: index + 1,
+        priority: 0, // Default priority
+        created_at: order.created_at,
+        status: order.order_status,
+        estimated_wait_time: index * 15 // 15 minutes per order
+      }));
+
+      setOrders(transformedOrders);
     } catch (err: any) {
       console.error('Error fetching FIFO queue:', err);
       setError(err.message || 'Failed to load order queue');
@@ -82,25 +108,14 @@ export function FIFOQueueView({ restaurant }: FIFOQueueViewProps) {
 
   const moveOrderInQueue = async (orderId: string, direction: 'up' | 'down') => {
     try {
-      const response = await fetch('/functions/v1/cash-payment/move-order', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          restaurant_id: restaurant.id,
-          order_id: orderId
-        })
-      });
+      // For now, just show a message that this feature is not fully implemented
+      // In a real implementation, you would update the order priority or queue position
+      toast('Queue reordering feature coming soon!');
       
-      const result = await response.json();
-      
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to move order');
-      }
-      
-      toast.success('Order moved successfully');
-      await fetchFIFOQueue(); // Refresh the queue
+      // TODO: Implement actual queue reordering logic
+      // This would involve updating the order priority or queue position in the database
+      // For now, we'll just refresh the queue
+      await fetchFIFOQueue();
     } catch (err: any) {
       console.error('Error moving order:', err);
       toast.error(err.message || 'Failed to move order');

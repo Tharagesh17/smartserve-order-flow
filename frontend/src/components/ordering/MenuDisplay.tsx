@@ -40,10 +40,13 @@ export function MenuDisplay({ restaurant, onAddToCart }: MenuDisplayProps) {
       
       const { data, error } = await supabase
         .from('menu_items')
-        .select('*')
+        .select(`
+          id, name, description, image_url, is_available, is_veg, restaurant_id, created_at, updated_at, category_id, calories,
+          categories(name)
+        `)
         .eq('restaurant_id', restaurant.id)
         .eq('is_active', true)
-        .order('category')
+        .order('categories(name)')
         .order('name');
 
       if (error) {
@@ -53,7 +56,7 @@ export function MenuDisplay({ restaurant, onAddToCart }: MenuDisplayProps) {
         setMenuItems(data || []);
         
         // Extract unique categories
-        const uniqueCategories = [...new Set(data?.map(item => item.category) || [])];
+        const uniqueCategories = [...new Set(data?.map(item => item.categories?.name || 'Uncategorized').filter(Boolean)) || [])];
         setCategories(uniqueCategories);
       }
     } catch (err) {

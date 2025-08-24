@@ -2,10 +2,14 @@ import { useState, useEffect } from 'react';
 import { Sidebar } from './Sidebar';
 import { OrdersView } from './OrdersView';
 import { KitchenView } from './KitchenView';
+import { BatchView } from './BatchView';
+import { QRCodeView } from './QRCodeView';
+
 import { MenuManagement } from './MenuManagement';
 import { ReportsView } from './ReportsView';
 import { FIFOQueueView } from './FIFOQueueView';
 import { CashPaymentView } from './CashPaymentView';
+import { StaffView } from './StaffView';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -120,6 +124,15 @@ export function DashboardLayout() {
       
       case 'cash-payment':
         return <CashPaymentView restaurant={restaurant} />;
+      
+      case 'batch':
+        return <BatchView restaurant={restaurant} />;
+      
+      case 'qrcodes':
+        return <QRCodeView restaurant={restaurant} />;
+      
+      case 'staff':
+        return <StaffView restaurant={restaurant} />;
       
       default:
         return (

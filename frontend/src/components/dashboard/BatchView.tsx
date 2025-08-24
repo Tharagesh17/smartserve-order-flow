@@ -33,7 +33,7 @@ export function BatchView({ restaurant }: BatchViewProps) {
           menu_item_id,
           quantity,
           status,
-          menu_items!inner(name, category),
+          menu_items!inner(name, category_id, categories(name)),
           orders!inner(order_id, restaurant_id)
         `)
         .eq('orders.restaurant_id', restaurant.id)
@@ -48,7 +48,7 @@ export function BatchView({ restaurant }: BatchViewProps) {
           acc[key] = {
             menu_item_id: key,
             name: item.menu_items.name,
-            category: item.menu_items.category,
+            category: item.menu_items.categories?.name || 'Uncategorized',
             total_quantity: 0,
             order_ids: [],
             status: 'pending'
