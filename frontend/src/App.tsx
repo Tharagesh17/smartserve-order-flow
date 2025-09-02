@@ -11,6 +11,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import OrderingPage from "./pages/OrderingPage";
+import Subscription from "./pages/Subscription";
 import NotFound from "./pages/NotFound";
 import { Suspense, lazy } from "react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
@@ -18,6 +19,7 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 // Lazy load components for better performance
 const LazyDashboard = lazy(() => import("./pages/Dashboard"));
 const LazyOrderingPage = lazy(() => import("./pages/OrderingPage"));
+const LazySubscription = lazy(() => import("./pages/Subscription"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -78,6 +80,7 @@ const App = () => (
                     <LazyDashboard />
                   </ProtectedRoute>
                 } />
+                <Route path="/subscription" element={<LazySubscription />} />
                 <Route path="/r/:restaurantId" element={<LazyOrderingPage />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>

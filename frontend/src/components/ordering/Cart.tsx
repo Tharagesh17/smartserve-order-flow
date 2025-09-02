@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -6,17 +6,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'react-hot-toast';
-import { 
-  ShoppingCart, 
-  X, 
-  Minus, 
-  Plus, 
-  Trash2, 
-  Clock, 
-  IndianRupee, 
-  CreditCard,
-  DollarSign
-} from 'lucide-react';
+import { ShoppingCart, X, Minus, Plus, Trash2, Clock, IndianRupee, DollarSign } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { subscriptionService } from '@/lib/subscription';
 import { formatCurrency } from '@/lib/currency';
 
 interface CartItem {
@@ -35,71 +27,193 @@ interface CartProps {
   items: CartItem[];
   onUpdateQuantity: (id: string, quantity: number) => void;
   onClearCart: () => void;
+  restaurantId: string;
 }
 
-export function Cart({ isOpen, onClose, items, onUpdateQuantity, onClearCart }: CartProps) {
-  const [loading, setLoading] = useState(false);
-  const [customerInfo, setCustomerInfo] = useState({
-    name: '',
-    phone: '',
-    paymentMethod: 'counter'
-  });
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
 
-  const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+export function Cart({ isOpen, onClose, items, onUpdateQuantity, onClearCart, restaurantId }: CartProps) {
+  const [loading, setLoading] = useState(false);
+  const [customerInfo, setCustomerInfo] = useState({ name: '', phone: '', paymentMethod: 'counter' });
+  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
+
+  // Load Razorpay script
+  useEffect(() => {
+    if (isOpen && !razorpayLoaded) {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      script.onload = () => {
+        setRazorpayLoaded(true);
+        console.log('Razorpay SDK loaded');
+      };
+      script.onerror = () => {
+        console.error('Failed to load Razorpay SDK');
+        toast.error('Payment system is temporarily unavailable');
+      };
+      document.body.appendChild(script);
+      
+      return () => {
+        document.body.removeChild(script);
+      };
+    }
+  }, [isOpen, razorpayLoaded]);
+
+  const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+  const handleInputChange = (field: string, value: string) => {
+    setCustomerInfo(prev => ({ ...prev, [field]: value }));
+  };
 
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      // Simulate order processing
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      if (!restaurantId) throw new Error('Restaurant ID is required');
+      if (items.length === 0) throw new Error('Cart is empty');
       
+      // Validate customer info for online payments
       if (customerInfo.paymentMethod === 'online') {
-        // Initialize Razorpay payment
-        try {
-          const options = {
-            key: process.env.REACT_APP_RAZORPAY_KEY_ID || 'rzp_test_YOUR_KEY',
-            amount: total * 100, // Razorpay expects amount in paise
-            currency: 'INR',
-            name: 'SmartServe',
-            description: 'Restaurant Order',
-            theme: {
-              color: '#40E0D0' // Using our primary blue color
-            },
-            handler: function (response: any) {
+        if (!customerInfo.name.trim()) throw new Error('Name is required for online payment');
+        if (!customerInfo.phone.trim()) throw new Error('Phone number is required for online payment');
+      }
+
+      const orderId = `ORD${Date.now()}`;
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .insert([
+          {
+            order_id: orderId,
+            restaurant_id: restaurantId,
+            total_amount: total,
+            payment_method: customerInfo.paymentMethod,
+            payment_status: 'pending',
+            order_status: 'received',
+            customer_name: customerInfo.name || null,
+            customer_phone: customerInfo.phone || null,
+          },
+        ])
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      const { error: itemsError } = await supabase.from('order_items').insert(
+        items.map((item) => ({
+          order_id: order.id,
+          menu_item_id: item.id,
+          quantity: item.quantity,
+          unit_price: item.price,
+          status: 'pending',
+        }))
+      );
+      
+      if (itemsError) throw itemsError;
+
+      // Increment user's order count for subscription tracking
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await subscriptionService.incrementUserOrderCount(user.id, restaurantId);
+        }
+      } catch (error) {
+        console.error('Error incrementing order count:', error);
+        // Don't fail the order if this fails
+      }
+
+      // For online payments, initiate Razorpay
+      if (customerInfo.paymentMethod === 'online') {
+        if (!razorpayLoaded) {
+          throw new Error('Payment system is still loading. Please try again in a moment.');
+        }
+
+        if (!window.Razorpay) {
+          throw new Error('Payment system is unavailable. Please try counter payment.');
+        }
+
+        const { data, error: razorpayError } = await supabase.functions.invoke("payments-razorpay", {
+          body: {
+            action: "create_order",
+            amount: Math.round(total * 100), // Razorpay needs paise
+            currency: "INR",
+            receipt: orderId,
+            db_order_id: order.id,
+            notes: {
+              customer_name: customerInfo.name,
+              customer_phone: customerInfo.phone
+            }
+          }
+        });
+
+        if (razorpayError) throw razorpayError;
+
+        const { key_id, order: razorpayOrder } = data;
+        
+        const options = {
+          key: key_id,
+          amount: razorpayOrder.amount,
+          currency: razorpayOrder.currency,
+          name: 'SmartServe',
+          description: `Order ${orderId}`,
+          order_id: razorpayOrder.id,
+          handler: async (response: any) => {
+            try {
+              const { error: verifyError } = await supabase.functions.invoke("payments-razorpay", {
+                body: {
+                  action: "verify_payment",
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                  db_order_id: order.id,
+                  amount: Math.round(total * 100)
+                }
+              });
+              
+              if (verifyError) throw verifyError;
+              
               toast.success('Payment successful! Order placed.');
               onClose();
               onClearCart();
-            },
-            prefill: {
-              name: customerInfo.name || 'Customer',
-              contact: customerInfo.phone || ''
+            } catch (error: any) {
+              console.error('Payment verification error:', error);
+              toast.error('Payment verification failed: ' + (error.message || 'Unknown error'));
             }
-          };
+          },
+          prefill: {
+            name: customerInfo.name,
+            contact: customerInfo.phone,
+            email: '' // Razorpay expects email field
+          },
+          theme: { color: '#40E0D0' },
+          modal: {
+            ondismiss: () => {
+              toast.error('Payment cancelled');
+              // Update order status to reflect cancelled payment
+              supabase
+                .from('orders')
+                .update({ payment_status: 'failed', order_status: 'cancelled' })
+                .eq('id', order.id)
+                .then(() => console.log('Order marked as cancelled'));
+            }
+          },
+        };
 
-          const rzp = new (window as any).Razorpay(options);
-          rzp.open();
-        } catch (onlineErr: any) {
-          console.error('Online payment error:', onlineErr);
-          toast.error(onlineErr?.message || 'Could not start payment.');
-        }
-        return;
-      } else if (customerInfo.paymentMethod === 'cash') {
-        // For cash payments, just place the order
-        toast.success('Order placed successfully! Please pay at the counter.');
-        onClose();
-        onClearCart();
-        return;
+        const rzp = new window.Razorpay(options);
+        rzp.open();
       } else {
-        // Counter payment
+        // For counter payments
         toast.success('Order placed successfully! Please pay at the counter.');
         onClose();
         onClearCart();
       }
-    } catch (error) {
-      console.error('Order error:', error);
-      toast.error('Failed to place order. Please try again.');
+    } catch (err: any) {
+      console.error('Order error:', err);
+      toast.error(err.message || 'Failed to place order');
     } finally {
       setLoading(false);
     }
@@ -107,221 +221,113 @@ export function Cart({ isOpen, onClose, items, onUpdateQuantity, onClearCart }: 
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent side="right" className="w-full sm:max-w-md p-0 bg-background">
-        <SheetHeader className="p-6 border-b border-border">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="bg-[hsl(var(--primary))] rounded-full p-2">
-                <ShoppingCart className="h-5 w-5 text-[hsl(var(--primary-foreground))]" />
-              </div>
-              <div>
-                <SheetTitle className="text-xl text-foreground">Your Order</SheetTitle>
-                <p className="text-sm text-muted-foreground">{items.length} items</p>
-              </div>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-              className="h-8 w-8 p-0 hover:bg-muted"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+      <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle className="flex items-center">
+            <ShoppingCart className="mr-2 h-6 w-6" />
+            Your Cart
+          </SheetTitle>
         </SheetHeader>
 
-        {items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64 p-6">
-            <div className="bg-muted rounded-full p-4 mb-4">
-              <ShoppingCart className="h-8 w-8 text-muted-foreground" />
+        <div className="mt-6">
+          {items.length === 0 ? (
+            <div className="text-center py-12">
+              <ShoppingCart className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-4 text-lg font-medium text-gray-900">Your cart is empty</h3>
+              <p className="mt-1 text-gray-500">Start adding items to place an order</p>
             </div>
-            <h3 className="text-lg font-semibold mb-2 text-foreground">Your cart is empty</h3>
-            <p className="text-muted-foreground text-center mb-4">
-              Add some delicious items to get started
-            </p>
-            <Button onClick={onClose}>Continue Shopping</Button>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmitOrder} className="flex flex-col h-full">
-            {/* Cart Items */}
-            <div className="flex-1 overflow-auto p-6 space-y-4">
-              {items.map((item) => (
-                <Card key={item.id} className="border-0 shadow-sm bg-card">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-4">
-                      {/* Item Image Placeholder */}
-                      <div className="w-16 h-16 bg-gradient-to-br from-[hsl(var(--primary))]/10 to-[hsl(var(--primary))]/5 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <span className="text-lg">🍽️</span>
-                      </div>
-                      
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-semibold text-sm truncate text-foreground">{item.name}</h4>
-                        {item.variant_name && (
-                          <p className="text-xs text-muted-foreground">Variant: {item.variant_name} ({formatCurrency(item.variant_price || 0)})</p>
-                        )}
-                        {Array.isArray(item.addons) && item.addons.length > 0 && (
-                          <div className="text-xs text-muted-foreground">
-                            Add-ons: {item.addons.map((a: any) => `${a.name} (${formatCurrency(a.price || 0)})`).join(', ')}
-                          </div>
-                        )}
-                        <p className="text-sm text-muted-foreground mb-2 mt-1">
-                          {formatCurrency(item.price)} each
-                        </p>
-                        
-                        <div className="flex items-center gap-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
-                            className="h-8 w-8 p-0 border-border hover:bg-muted"
-                          >
-                            <Minus className="h-3 w-3" />
-                          </Button>
-                          
-                          <span className="w-8 text-center font-medium text-foreground">{item.quantity}</span>
-                          
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
-                            className="h-8 w-8 p-0 border-border hover:bg-muted"
-                          >
-                            <Plus className="h-3 w-3" />
-                          </Button>
-                          
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => onUpdateQuantity(item.id, 0)}
-                            className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
-                      
-                      <div className="text-right">
-                        <p className="font-semibold text-sm text-foreground">{formatCurrency(item.price * item.quantity)}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-
-              {/* Total */}
-              <Card className="border-0 bg-[hsl(var(--primary))]/5 bg-card">
-                <CardContent className="p-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-lg font-semibold text-foreground">Total:</span>
-                    <span className="text-2xl font-bold text-[hsl(var(--primary))]">
-                      {formatCurrency(total)}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Customer Information */}
-            <div className="p-6 border-t border-border bg-muted/30">
-              <h3 className="font-semibold mb-4 flex items-center gap-2 text-foreground">
-                <IndianRupee className="h-4 w-4" />
-                Customer Information
-              </h3>
-              
+          ) : (
+            <>
               <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="customer-name" className="text-sm font-medium text-foreground">Name (Optional)</Label>
-                  <Input
-                    id="customer-name"
-                    value={customerInfo.name}
-                    onChange={(e) => setCustomerInfo(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="Your name"
-                    className="bg-background border-border text-foreground placeholder:text-muted-foreground"
-                  />
+                {items.map((item) => (
+                  <div key={item.id} className="flex items-center justify-between border-b pb-4">
+                    <div className="flex-1">
+                      <h4 className="font-medium">{item.name}</h4>
+                      <p className="text-sm text-gray-500">
+                        {formatCurrency(item.price)} × {item.quantity}
+                      </p>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
+                      >
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                      <span className="w-8 text-center">{item.quantity}</span>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-6 border-t pt-4">
+                <div className="flex justify-between text-lg font-medium">
+                  <span>Total</span>
+                  <span>{formatCurrency(total)}</span>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="customer-phone" className="text-sm font-medium text-foreground">Phone (Optional)</Label>
-                  <Input
-                    id="customer-phone"
-                    type="tel"
-                    value={customerInfo.phone}
-                    onChange={(e) => setCustomerInfo(prev => ({ ...prev, phone: e.target.value }))}
-                    placeholder="Your phone number"
-                    className="bg-background border-border text-foreground placeholder:text-muted-foreground"
-                  />
-                </div>
+                <form onSubmit={handleSubmitOrder} className="mt-6 space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Name</Label>
+                    <Input
+                      id="name"
+                      placeholder="Your name"
+                      value={customerInfo.name}
+                      onChange={(e) => handleInputChange('name', e.target.value)}
+                      required={customerInfo.paymentMethod === 'online'}
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="payment-method" className="text-sm font-medium text-foreground">Payment Method</Label>
-                  <Select 
-                    value={customerInfo.paymentMethod}
-                    onValueChange={(value) => setCustomerInfo(prev => ({ ...prev, paymentMethod: value }))}
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder="Your phone number"
+                      value={customerInfo.phone}
+                      onChange={(e) => handleInputChange('phone', e.target.value)}
+                      required={customerInfo.paymentMethod === 'online'}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="payment-method">Payment Method</Label>
+                    <Select
+                      value={customerInfo.paymentMethod}
+                      onValueChange={(value) => handleInputChange('paymentMethod', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select payment method" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="counter">Pay at Counter</SelectItem>
+                        <SelectItem value="online">Online Payment</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <Button 
+                    type="submit" 
+                    className="w-full" 
+                    disabled={loading || (customerInfo.paymentMethod === 'online' && !razorpayLoaded)}
                   >
-                    <SelectTrigger className="bg-background border-border text-foreground">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="counter" className="flex items-center gap-2">
-                        <CreditCard className="h-4 w-4" />
-                        Pay at Counter
-                      </SelectItem>
-                      <SelectItem value="cash" className="flex items-center gap-2">
-                        <DollarSign className="h-4 w-4" />
-                        Pay with Cash
-                      </SelectItem>
-                      <SelectItem value="online" className="flex items-center gap-2">
-                        <IndianRupee className="h-4 w-4" />
-                        Pay Online
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                  
-                  {customerInfo.paymentMethod === 'cash' && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      💡 Tip: Hotel staff will process your cash payment at the counter
-                    </p>
-                  )}
-                </div>
+                    {loading ? 'Processing...' : `Place Order - ${formatCurrency(total)}`}
+                  </Button>
+                </form>
               </div>
-            </div>
-
-            {/* Actions */}
-            <div className="p-6 border-t border-border bg-background">
-              <div className="space-y-3">
-                <Button 
-                  type="submit" 
-                  className="w-full h-12 text-lg font-semibold bg-[hsl(var(--primary))] hover:bg-[hsl(var(--primary))]/90" 
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <div className="flex items-center gap-2">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      Placing Order...
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4" />
-                      Place Order
-                    </div>
-                  )}
-                </Button>
-                
-                <Button 
-                  type="button"
-                  variant="subtle"
-                  className="w-full bg-[hsl(var(--secondary))] hover:bg-[hsl(var(--secondary))]/80 text-[hsl(var(--secondary-foreground))]" 
-                  onClick={onClearCart}
-                >
-                  Clear Cart
-                </Button>
-              </div>
-            </div>
-          </form>
-        )}
+            </>
+          )}
+        </div>
       </SheetContent>
     </Sheet>
   );

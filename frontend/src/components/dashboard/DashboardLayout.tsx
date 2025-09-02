@@ -14,6 +14,7 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import type { Tables } from '@/integrations/supabase/types';
+import { SettingsView } from './SettingsView';
 
 export function DashboardLayout() {
   const { user } = useAuth();
@@ -129,6 +130,9 @@ export function DashboardLayout() {
       
       case 'staff':
         return <StaffView restaurant={restaurant} />;
+      
+      case 'settings':
+          return <SettingsView restaurant={restaurant} />;
       
       default:
         return (

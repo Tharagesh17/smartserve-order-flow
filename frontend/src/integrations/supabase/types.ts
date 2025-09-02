@@ -359,6 +359,9 @@ export type Database = {
           restaurant_id: string
           total_amount: number
           updated_at: string
+          razorpay_order_id: string | null
+          payment_currency: string | null
+          razorpay_signature: string | null
         }
         Insert: {
           created_at?: string
@@ -373,6 +376,9 @@ export type Database = {
           restaurant_id: string
           total_amount: number
           updated_at?: string
+          razorpay_order_id?: string | null
+          payment_currency?: string | null
+          razorpay_signature?: string | null
         }
         Update: {
           created_at?: string
@@ -387,6 +393,9 @@ export type Database = {
           restaurant_id?: string
           total_amount?: number
           updated_at?: string
+          razorpay_order_id?: string | null
+          payment_currency?: string | null
+          razorpay_signature?: string | null
         }
         Relationships: [
           {
@@ -539,6 +548,8 @@ export type Database = {
           ordering_url: string | null
           qr_code_url: string | null
           updated_at: string | null
+          subscription_required: boolean | null
+          free_order_limit: number | null
         }
         Insert: {
           created_at?: string | null
@@ -549,6 +560,8 @@ export type Database = {
           ordering_url?: string | null
           qr_code_url?: string | null
           updated_at?: string | null
+          subscription_required?: boolean | null
+          free_order_limit?: number | null
         }
         Update: {
           created_at?: string | null
@@ -559,6 +572,8 @@ export type Database = {
           ordering_url?: string | null
           qr_code_url?: string | null
           updated_at?: string | null
+          subscription_required?: boolean | null
+          free_order_limit?: number | null
         }
         Relationships: []
       }
